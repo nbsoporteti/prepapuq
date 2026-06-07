@@ -1,0 +1,35 @@
+services:
+  pocketbase:
+    build:
+      context: ./apps/pocketbase
+      dockerfile: Dockerfile
+    container_name: prepa-pocketbase
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    volumes:
+      - pb_data:/pb/pb_data
+    environment:
+      # Optional: set to a 32-char string to enable encrypted settings storage.
+      # Leave unset on first deploy; rotate by recreating the container with
+      # a new value AFTER backing up pb_data.
+      PB_ENCRYPTION_KEY: ${PB_ENCRYPTION_KEY:-}
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        # Bake the public PocketBase URL into the SPA bundle.
+        # Locally point at http://localhost:8090; in production use the
+        # public hostname (e.g. https://api.prepa.example.com).
+        VITE_POCKETBASE_URL: ${VITE_POCKETBASE_URL:-http://localhost:8090}
+    container_name: prepa-web
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - pocketbase
+
+volumes:
+  pb_data:
