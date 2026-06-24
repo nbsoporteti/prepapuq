@@ -156,7 +156,7 @@ Síntomas:
 - El admin UI no funciona bien con redirects.
 
 Fix: PB admin → Settings → Application → "Application URL" = el dominio
-real del frontend (`https://prepa.tudominio.cl`).
+real del frontend (`https://prepapuq.cl`).
 
 ## Reglas de seguridad
 

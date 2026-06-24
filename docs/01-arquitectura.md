@@ -11,7 +11,7 @@
            │ HTTPS                         │ HTTPS
            │                               │
            ▼                               ▼
-   prepa.tudominio.cl           api.prepa.tudominio.cl
+   prepapuq.cl           api.prepapuq.cl
    (nginx en Coolify)           (binario PB en Coolify)
                                           │
                                           ▼
@@ -102,8 +102,8 @@ Detalle completo en [`02-modelo-datos.md`](02-modelo-datos.md).
 ## Despliegue
 
 - **Web** y **PocketBase** se sirven en subdominios distintos:
-  - `prepa.tudominio.cl` → SPA (nginx)
-  - `api.prepa.tudominio.cl` → PocketBase
+  - `prepapuq.cl` → SPA (nginx)
+  - `api.prepapuq.cl` → PocketBase
 - **CORS**: PocketBase permite por default todos los origenes. Si se quiere ajustar, se hace desde el admin de PB (Settings → CORS).
 - **TLS**: gestionado por Coolify (Let's Encrypt automático).
 - **Volumen persistente**: `/pb/pb_data` debe estar montado a un volumen de Coolify. Sin eso, perdés la BD en cada redeploy.

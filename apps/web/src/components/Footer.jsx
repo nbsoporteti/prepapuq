@@ -4,7 +4,7 @@ import { Mail, MapPin, MessageCircle, Instagram, Facebook, GraduationCap } from 
 
 const WHATSAPP_NUMBER = '+56 9 0000 0000'; // editable en el panel admin (PB) o hardcodear cuando esté
 const WHATSAPP_URL = 'https://wa.me/56900000000'; // ídem
-const EMAIL = 'contacto@prepa.cl';
+const EMAIL = 'contacto@prepapuq.cl';
 const INSTAGRAM_URL = '#';
 const FACEBOOK_URL = '#';
 

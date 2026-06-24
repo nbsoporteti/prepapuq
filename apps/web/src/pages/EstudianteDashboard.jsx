@@ -141,7 +141,7 @@ const EstudianteDashboard = () => {
                 Contacta con administración para regularizar tu matrícula.
               </p>
               <Button asChild variant="outline" className="font-medium px-8 transition-all duration-200 active:scale-[0.98]">
-                <a href="mailto:contacto@prepa.cl">Contactar Soporte</a>
+                <a href="mailto:contacto@prepapuq.cl">Contactar Soporte</a>
               </Button>
             </div>
           )}

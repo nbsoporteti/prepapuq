@@ -7,8 +7,8 @@ volumen persistente para la BD, y TLS automático.
 
 - VPS con Coolify ≥ 4.x instalado y accesible.
 - Dominio con DNS apuntando al VPS. Vas a usar dos subdominios:
-  - `prepa.tudominio.cl` — frontend
-  - `api.prepa.tudominio.cl` — backend (PocketBase)
+  - `prepapuq.cl` — frontend
+  - `api.prepapuq.cl` — backend (PocketBase)
 - Repo del proyecto en GitHub/GitLab/Bitbucket (Coolify se conecta vía git).
 
 ## Arquitectura del deploy
@@ -16,7 +16,7 @@ volumen persistente para la BD, y TLS automático.
 ```
                        ┌──── Coolify ────┐
                        │                 │
-  prepa.tudominio.cl  ─┤  Web (nginx)    │
+  prepapuq.cl  ─┤  Web (nginx)    │
                        │  port 80        │
                        │                 │
                        ├─────────────────┤
@@ -52,7 +52,7 @@ En Coolify:
    - **Dockerfile location**: `apps/pocketbase/Dockerfile`
    - **Base directory** (build context): `apps/pocketbase`
    - **Port exposes**: `8090`
-   - **Domains**: `https://api.prepa.tudominio.cl`
+   - **Domains**: `https://api.prepapuq.cl`
 5. **Environment Variables**:
    - `PB_ENCRYPTION_KEY` = `<generar con openssl rand -hex 16>` (opcional pero recomendado)
 6. **Persistent Storage**:
@@ -63,8 +63,8 @@ En Coolify:
 8. **Deploy**.
 
 Esperá a que termine. Verificá:
-- `https://api.prepa.tudominio.cl/api/health` → debería devolver `{"code":200,"message":"API is healthy."}`
-- `https://api.prepa.tudominio.cl/_/` → admin UI
+- `https://api.prepapuq.cl/api/health` → debería devolver `{"code":200,"message":"API is healthy."}`
+- `https://api.prepapuq.cl/_/` → admin UI
 
 ### Crear superuser
 
@@ -75,7 +75,7 @@ recuerdes y una contraseña fuerte. Esa cuenta administra TODO PocketBase
 ### Configurar la URL pública de PocketBase
 
 En el admin de PB:
-- **Settings → Application → Application URL**: poné `https://prepa.tudominio.cl`
+- **Settings → Application → Application URL**: poné `https://prepapuq.cl`
   (la URL del frontend — PB la usa para armar los links de los emails de reset).
 
 ## Paso 3 — Crear servicio Web
@@ -87,14 +87,14 @@ En el admin de PB:
    - **Dockerfile location**: `apps/web/Dockerfile`
    - **Base directory** (build context): `.` (raíz del repo — necesita el package-lock.json y la estructura del monorepo)
    - **Port exposes**: `80`
-   - **Domains**: `https://prepa.tudominio.cl`
+   - **Domains**: `https://prepapuq.cl`
 5. **Build arguments** (NO environment variables — el Vite necesita esto al BUILD time, no al runtime):
-   - `VITE_POCKETBASE_URL` = `https://api.prepa.tudominio.cl`
+   - `VITE_POCKETBASE_URL` = `https://api.prepapuq.cl`
 6. **Deploy**.
 
 Esperá. Verificá:
-- `https://prepa.tudominio.cl/` → debe renderizar la landing de PrePa.
-- DevTools → Network: las llamadas a la API deben ir a `https://api.prepa.tudominio.cl/...`
+- `https://prepapuq.cl/` → debe renderizar la landing de PrePa.
+- DevTools → Network: las llamadas a la API deben ir a `https://api.prepapuq.cl/...`
 
 ## Paso 4 — Configurar SMTP en PocketBase
 
@@ -105,10 +105,10 @@ Sin esto, los emails de "olvidé mi contraseña" no salen.
 3. Completá con los datos de tu proveedor. Ejemplo con Hostinger Mail:
    - Host: `smtp.hostinger.com`
    - Port: `465`
-   - Username: `noreply@tudominio.cl`
+   - Username: `noreply@prepapuq.cl`
    - Password: la del buzón
    - Sender name: `PrePa`
-   - Sender address: `noreply@tudominio.cl`
+   - Sender address: `noreply@prepapuq.cl`
    - TLS: `SMTPS` (puerto 465) o `STARTTLS` (587), según tu proveedor.
 4. **Test email** desde la misma pantalla. Si llega, OK.
 5. **Settings → Collections → users → Options → Mail templates**:
@@ -161,7 +161,7 @@ Coolify soporta auto-deploy en push a una rama. Configurá:
 Ahora cada `git push origin main` redeploya los dos servicios.
 
 Para pre-prod usá una rama `staging` y dos servicios paralelos con dominios
-distintos (`staging.prepa.tudominio.cl`).
+distintos (`staging.prepapuq.cl`).
 
 ## Paso 8 — Monitoreo y logs
 
@@ -173,7 +173,7 @@ distintos (`staging.prepa.tudominio.cl`).
 
 | Variable              | Local (Docker) | Staging                              | Producción                             |
 | --------------------- | -------------- | ------------------------------------ | -------------------------------------- |
-| `VITE_POCKETBASE_URL` | `http://localhost:8090` | `https://staging-api.prepa…` | `https://api.prepa.tudominio.cl` |
+| `VITE_POCKETBASE_URL` | `http://localhost:8090` | `https://staging-api.prepa…` | `https://api.prepapuq.cl` |
 | `PB_ENCRYPTION_KEY`   | vacío (OK)     | random 32-char                       | random 32-char (NO el mismo que staging) |
 
 ## Rotación de PB_ENCRYPTION_KEY

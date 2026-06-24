@@ -153,7 +153,7 @@ const HomePage = () => {
         <meta property="og:description" content="El único preu de Magallanes que conoce a cada alumno por nombre. Resultados PAES verificables, profesores locales, simulacros mensuales con percentil." />
         <meta property="og:type" content="website" />
         <meta property="og:locale" content="es_CL" />
-        <link rel="canonical" href="https://prepa.cl/" />
+        <link rel="canonical" href="https://prepapuq.cl/" />
       </Helmet>
 
       <main>

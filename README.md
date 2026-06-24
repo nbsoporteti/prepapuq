@@ -77,8 +77,8 @@ docker compose up --build
 
 Dos servicios separados, dos subdominios:
 
-- `prepa.tudominio.cl` → contenedor web
-- `api.prepa.tudominio.cl` → contenedor pocketbase
+- `prepapuq.cl` → contenedor web
+- `api.prepapuq.cl` → contenedor pocketbase
 
 ### Pasos
 
@@ -90,7 +90,7 @@ Dos servicios separados, dos subdominios:
    - Port: `8090`
    - Persistent volume: `/pb/pb_data` → asignar storage de Coolify (importante,
      sin esto perdés la BD en cada redeploy)
-   - Domain: `api.prepa.tudominio.cl`
+   - Domain: `api.prepapuq.cl`
    - Environment:
      - `PB_ENCRYPTION_KEY` = (32 chars, generar con `openssl rand -hex 16`)
 3. **Servicio Web**:
@@ -98,15 +98,15 @@ Dos servicios separados, dos subdominios:
    - Dockerfile location: `apps/web/Dockerfile`
    - Build context: `.` (raíz del repo)
    - Port: `80`
-   - Domain: `prepa.tudominio.cl`
+   - Domain: `prepapuq.cl`
    - Build args:
-     - `VITE_POCKETBASE_URL` = `https://api.prepa.tudominio.cl`
+     - `VITE_POCKETBASE_URL` = `https://api.prepapuq.cl`
 4. Deployá primero PocketBase, abrí el admin UI en
-   `https://api.prepa.tudominio.cl/_/`, creá la cuenta superuser y verificá
+   `https://api.prepapuq.cl/_/`, creá la cuenta superuser y verificá
    que las migraciones corrieron (deberías ver las colecciones `users`,
    `cursos`, `materiales`, `asignaciones`, `asistencia`, `parent_student`,
    `justifications`, `leads`).
-5. Deployá Web. Probá login en `https://prepa.tudominio.cl/login`.
+5. Deployá Web. Probá login en `https://prepapuq.cl/login`.
 
 ### Backup de pb_data
 
@@ -153,12 +153,12 @@ El flujo "Olvidé mi contraseña" (`/forgot-password`) usa PocketBase para envia
 el email de recuperación. Para que llegue de verdad, configurá SMTP en el
 admin de PocketBase:
 
-1. Entrá a `https://api.prepa.tudominio.cl/_/`.
+1. Entrá a `https://api.prepapuq.cl/_/`.
 2. **Settings → Mail settings**: marcá "Use SMTP mail server" y completá host,
    puerto, usuario, contraseña y dirección remitente (cualquier proveedor:
    Hostinger Mail, Mailgun, SendGrid, Resend, etc.).
 3. **Settings → Application**: poné en "Application URL" la URL pública del
-   frontend (`https://prepa.tudominio.cl`). PocketBase la usa para armar el
+   frontend (`https://prepapuq.cl`). PocketBase la usa para armar el
    link del email.
 4. **Collections → users → Options → Reset password email**: ajustá el
    template para que el enlace apunte a `{APP_URL}/reset-password?token={TOKEN}`.
