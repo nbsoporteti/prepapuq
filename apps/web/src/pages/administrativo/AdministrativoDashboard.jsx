@@ -1,23 +1,36 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
-import { Users, FileText, CreditCard, AlertCircle } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useSearchParams } from 'react-router-dom';
+import { Home, Users, UserCircle2, UserPlus, CreditCard, FileText, BarChart3 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext.jsx';
+import { useAdministrativoOverview } from '@/hooks/useAdministrativoOverview.js';
+import AdmVistaDia from './AdmVistaDia.jsx';
+import AdmAlumnos from './AdmAlumnos.jsx';
+import AdmApoderados from './AdmApoderados.jsx';
+import AdmMatriculas from './AdmMatriculas.jsx';
+import AdmPagos from './AdmPagos.jsx';
+import AdmJustificaciones from './AdmJustificaciones.jsx';
+import AdmReportes from './AdmReportes.jsx';
 
-/**
- * Placeholder de Fase 0 — confirma routing + role guard.
- * La implementación real (matrículas, pagos, justificaciones, reportes) llega
- * en Fase 2.
- */
 const AdministrativoDashboard = () => {
   const { currentUser } = useAuth();
+  const { data: overview, isLoading } = useAdministrativoOverview();
+  const [params, setParams] = useSearchParams();
+  const tab = params.get('tab') || 'hoy';
 
-  const stats = [
-    { label: 'Alumnos activos', value: '—', icon: Users },
-    { label: 'Pagos vencidos', value: '—', icon: CreditCard },
-    { label: 'Justificaciones', value: '—', icon: FileText },
-    { label: 'Matrículas pendientes', value: '—', icon: AlertCircle },
-  ];
+  const handleTabChange = (value) => {
+    setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (value === 'hoy') next.delete('tab');
+      else next.set('tab', value);
+      return next;
+    });
+  };
+
+  const justifBadge = overview?.justificacionesPendientes || 0;
+  const pagosVencidosBadge = overview?.pagosVencidos || 0;
 
   return (
     <>
@@ -25,52 +38,86 @@ const AdministrativoDashboard = () => {
         <title>Panel administrativo | PrePa</title>
       </Helmet>
 
-      <div className="min-h-screen bg-muted/30 pb-12">
-        <div className="bg-accent/5 border-b">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-10">
-            <p className="text-sm font-medium uppercase tracking-wide text-accent mb-2">
-              Secretaría
+      <div className="min-h-screen bg-muted/30 pb-20">
+        <div className="bg-card border-b">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <p className="text-xs font-semibold uppercase tracking-wider text-accent mb-2">
+              Secretaría / Administración
             </p>
-            <h1 className="text-3xl font-bold tracking-tight text-balance">
+            <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
               Hola, <span className="text-primary">{currentUser?.name || 'equipo'}</span>
             </h1>
-            <p className="text-muted-foreground mt-2 max-w-xl">
-              Acá vas a gestionar matrículas, pagos, justificaciones y comunicación con apoderados. Por ahora es un esqueleto.
-            </p>
           </div>
         </div>
 
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {stats.map((s) => {
-              const Icon = s.icon;
-              return (
-                <Card key={s.label}>
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      {s.label}
-                    </CardTitle>
-                    <Icon className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold tabular-nums">{s.value}</div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+          <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
+            <div className="border-b overflow-x-auto">
+              <TabsList className="bg-transparent rounded-none h-auto p-0 gap-1 flex w-max">
+                <TabsTrigger value="hoy" className={tabTriggerCls}>
+                  <Home className="h-4 w-4 mr-2" />Hoy
+                </TabsTrigger>
+                <TabsTrigger value="alumnos" className={tabTriggerCls}>
+                  <Users className="h-4 w-4 mr-2" />Alumnos
+                </TabsTrigger>
+                <TabsTrigger value="apoderados" className={tabTriggerCls}>
+                  <UserCircle2 className="h-4 w-4 mr-2" />Apoderados
+                </TabsTrigger>
+                <TabsTrigger value="matriculas" className={tabTriggerCls}>
+                  <UserPlus className="h-4 w-4 mr-2" />Matrículas
+                </TabsTrigger>
+                <TabsTrigger value="pagos" className={tabTriggerCls}>
+                  <CreditCard className="h-4 w-4 mr-2" />Pagos
+                  {pagosVencidosBadge > 0 && (
+                    <Badge variant="destructive" className="ml-2 h-5 px-1.5 text-[10px] font-mono">
+                      {pagosVencidosBadge}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="justificaciones" className={tabTriggerCls}>
+                  <FileText className="h-4 w-4 mr-2" />Justificaciones
+                  {justifBadge > 0 && (
+                    <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-[10px] font-mono bg-warning/15 text-warning-foreground">
+                      {justifBadge}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="reportes" className={tabTriggerCls}>
+                  <BarChart3 className="h-4 w-4 mr-2" />Reportes
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-          <Card className="mt-8 border-dashed">
-            <CardContent className="p-8 text-center">
-              <p className="text-sm text-muted-foreground">
-                Panel administrativo en construcción (Fase 2 del plan maestro). Pronto vas a poder matricular alumnos, registrar pagos y aprobar justificaciones desde acá.
-              </p>
-            </CardContent>
-          </Card>
+            <div className="py-6">
+              <TabsContent value="hoy" className="m-0">
+                <AdmVistaDia overview={overview} isLoading={isLoading} />
+              </TabsContent>
+              <TabsContent value="alumnos" className="m-0">
+                <AdmAlumnos />
+              </TabsContent>
+              <TabsContent value="apoderados" className="m-0">
+                <AdmApoderados />
+              </TabsContent>
+              <TabsContent value="matriculas" className="m-0">
+                <AdmMatriculas />
+              </TabsContent>
+              <TabsContent value="pagos" className="m-0">
+                <AdmPagos />
+              </TabsContent>
+              <TabsContent value="justificaciones" className="m-0">
+                <AdmJustificaciones />
+              </TabsContent>
+              <TabsContent value="reportes" className="m-0">
+                <AdmReportes />
+              </TabsContent>
+            </div>
+          </Tabs>
         </div>
       </div>
     </>
   );
 };
+
+const tabTriggerCls = 'data-[state=active]:bg-transparent data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-4 py-3 whitespace-nowrap shrink-0';
 
 export default AdministrativoDashboard;
