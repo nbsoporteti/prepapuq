@@ -5,6 +5,83 @@ de Horizons con bugs" a "listo para deploy en VPS propio").
 
 ---
 
+## 2026-06-24 — Fase 2.2: editor visual de ensayos + imágenes, LaTeX y campos nuevos
+
+La creación de ensayos pasó de **pegar texto** a un **editor visual por pregunta**,
+y el contenido de las preguntas ahora admite **imágenes** y **fórmulas LaTeX**. Se
+agregaron campos pedagógicos (dificultad, preguntas piloto, instrucciones, tabla de
+conversión editable). El flujo de "pegar texto" se conserva como **importador rápido**
+dentro del editor.
+
+> ⚖️ **Legal (sin cambios):** los campos nuevos son **estructura**, no contenido. El
+> editor lleva una nota de responsabilidad en pantalla: solo se cargan preguntas
+> propias o autorizadas; **no** transcripciones de ensayos oficiales DEMRE.
+
+### 1. Backend — `1781100170_extend_preguntas_paes_rich.js` (append-only)
+
+- **`preguntas_paes`** suma: `dificultad` (`facil|media|dificil`, opcional),
+  `piloto` (bool, no puntúa), `imagen_enunciado`, `imagen_contexto` e
+  `imagen_a … imagen_e` (un archivo por alternativa A–E; máx. 5 MB, jpg/png/webp/
+  gif/svg). Un campo por letra → simple y sin desalinear al reordenar.
+- **`simulacros_paes`** suma: `instrucciones` (texto largo) que ve el alumno antes
+  de comenzar (además de la `descripcion` breve).
+- **Scoring sin tocar.** El hook `simulacros_paes.pb.js` ya saltea las posiciones
+  con clave `null`/`""`: una pregunta **piloto** se guarda con `clave[i] = null`, así
+  que no cuenta. El denominador de la tabla de conversión usa solo las que puntúan.
+
+### 2. Frontend — librería de render enriquecido
+
+- **`src/lib/richText.jsx` (nuevo)** + dependencia **`katex`**. Renderiza texto con
+  LaTeX intercalado: `$…$` en línea y `$$…$$` en bloque. Fuera de las fórmulas el
+  texto va escapado por React; solo el HTML de KaTeX (sin `<script>`) se inyecta, así
+  que no abre XSS. CSS de KaTeX importado una vez en `main.jsx`.
+- **`src/lib/paesImport.js`** sumó: `DIFICULTADES`/`DIFICULTAD_LABEL`,
+  `EJES_POR_ASIGNATURA` (sugerencias por asignatura), `serializeTabla`/`parseTabla`/
+  `validateTabla` (tabla de conversión personalizada "correctas: puntaje"), y el
+  parser ahora entiende líneas `Dificultad:` y `Piloto`.
+
+### 3. Frontend — editor visual (`AdminPAESImportPage.jsx` reescrita)
+
+- **Tarjeta por pregunta**: enunciado + imagen, eje (con `datalist` de sugerencias),
+  **selector de dificultad**, **switch piloto**, alternativas en filas con
+  **marcar-correcta** (un click), texto e **imagen por alternativa**, mover/duplicar/
+  eliminar pregunta y alternativa, **texto de lectura** compartido colapsable (con
+  imagen y botón "copiar de la anterior") y explicación.
+- **Vista previa** que renderiza el ensayo **como lo ve el alumno** (LaTeX + imágenes
+  + agrupación de textos de lectura).
+- **Tabla de conversión** editable: *referencial* (curva automática 100–1000 según
+  preguntas que puntúan) o *personalizada* (pegar la tabla oficial DEMRE).
+- **"Importar desde texto"** en un diálogo: pega el formato simple → parsea → carga
+  las preguntas al editor (reemplazar o agregar). Conserva el ejemplo y la ayuda.
+- **Guardado in-place**: hace *match* de preguntas por `numero`, **actualiza** las
+  existentes (preserva los archivos ya subidos), crea las nuevas y borra las
+  sobrantes. Evita el conflicto del índice único `(simulacro_id, numero)`.
+
+### 4. Frontend — rendir (`EstudiantePAESRendir.jsx`)
+
+- Enunciado, alternativas, texto de lectura y explicación pasan por `RichText`
+  (LaTeX). Se muestran las imágenes (`imagen_enunciado`, `imagen_contexto`,
+  `imagen_a…e`). Las **instrucciones** del simulacro aparecen en la intro.
+- **Piloto en la revisión**: no se marca correcta/incorrecta (no puntúa); se etiqueta
+  "Piloto · no puntúa" y se resalta en neutro la respuesta del alumno. El conteo
+  "correctas/total" usa solo las preguntas que puntúan.
+
+### Verificación
+
+| Check          | Resultado                                                          |
+| -------------- | ------------------------------------------------------------------ |
+| `npx eslint`   | ✓ Sin errores ni warnings en los archivos tocados                  |
+| `vite build`   | ✓ ~23 s — `index.js` 1.46 MB (gz 430 KB) + fuentes KaTeX bundleadas |
+
+### ⚠️ Operación: un paso manual
+
+- **Redeploy del backend** para correr la migración **`1781100170`** (agrega los
+  campos de imagen, `dificultad`, `piloto` e `instrucciones`). Hasta entonces el
+  editor puede cargar texto pero **fallará al subir imágenes** (los campos no existen
+  aún en la DB). Si el deploy anterior no se hizo, corre también `1781100150`/`160`.
+
+---
+
 ## 2026-06-24 — Fase 2.1: PAES interactiva (preguntas dentro del sistema)
 
 **Pivote de diseño.** La PAES de la Fase 2 era una *hoja de respuestas*: el

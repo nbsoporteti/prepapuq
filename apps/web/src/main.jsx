@@ -11,6 +11,9 @@ import '@fontsource/jetbrains-mono/400.css';
 import '@fontsource/jetbrains-mono/500.css';
 import '@fontsource/jetbrains-mono/700.css';
 
+// Estilos de KaTeX (fórmulas matemáticas en preguntas PAES)
+import 'katex/dist/katex.min.css';
+
 import App from '@/App';
 import { queryClient } from '@/lib/queryClient';
 import '@/index.css';

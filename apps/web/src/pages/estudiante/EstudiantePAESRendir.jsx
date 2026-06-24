@@ -39,8 +39,18 @@ import {
 import { toast } from 'sonner';
 import pb from '@/lib/pocketbaseClient';
 import { useAuth } from '@/contexts/AuthContext.jsx';
+import { RichText } from '@/lib/richText';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E'];
+
+// URL de un archivo de PocketBase (compat getURL/getUrl según versión del SDK).
+const fileUrl = (record, name) => {
+  if (!name) return null;
+  if (pb.files.getURL) return pb.files.getURL(record, name);
+  return pb.files.getUrl(record, name);
+};
+// Imagen de una alternativa (campos imagen_a … imagen_e en preguntas_paes).
+const altImgUrl = (p, letra) => fileUrl(p, p[`imagen_${String(letra || '').toLowerCase()}`]);
 
 const ASIGNATURA_LABEL = {
   competencia_lectora: 'Competencia Lectora',
@@ -110,16 +120,21 @@ const PdfPanel = ({ url, titulo, className = '' }) => {
 
 // Bloque de texto base (lecturas de Competencia Lectora) compartido por varias
 // preguntas. Se muestra una sola vez, encabezando el grupo.
-const ContextoBlock = ({ texto, label }) => (
+const ContextoBlock = ({ texto, label, imgUrl }) => (
   <Card className="border-info/30 bg-info/5">
     <CardContent className="p-4 sm:p-5">
       <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-info">
         <BookOpen className="h-3.5 w-3.5" />
         {label || 'Texto'}
       </div>
-      <div className="whitespace-pre-line text-sm leading-relaxed text-foreground/90">
-        {texto}
-      </div>
+      {imgUrl && (
+        <img src={imgUrl} alt="" className="mb-3 max-h-80 w-auto rounded border bg-white object-contain" />
+      )}
+      {texto && (
+        <RichText as="div" className="whitespace-pre-line text-sm leading-relaxed text-foreground/90">
+          {texto}
+        </RichText>
+      )}
     </CardContent>
   </Card>
 );
@@ -160,6 +175,9 @@ const EstudiantePAESRendir = () => {
     () => [...new Set(preguntas.map((p) => p.eje).filter(Boolean))],
     [preguntas],
   );
+
+  // Preguntas que efectivamente puntúan (las piloto no cuentan).
+  const nScored = useMemo(() => preguntas.filter((p) => !p.piloto).length, [preguntas]);
 
   // --- Carga inicial: simulacro + preguntas + intento existente -------------
   useEffect(() => {
@@ -370,7 +388,7 @@ const EstudiantePAESRendir = () => {
                   {typeof correctas === 'number' && (
                     <Stat
                       label="Respuestas correctas"
-                      value={interactivo ? `${correctas}/${nPreguntas}` : correctas}
+                      value={interactivo ? `${correctas}/${nScored}` : correctas}
                     />
                   )}
                   {typeof result?.percentil_interno === 'number' && (
@@ -422,6 +440,7 @@ const EstudiantePAESRendir = () => {
                         <ContextoBlock
                           texto={p.contexto}
                           label={`Texto ${textosOrden.indexOf(p.contexto) + 1}`}
+                          imgUrl={fileUrl(p, p.imagen_contexto)}
                         />
                       )}
                       <RevisionPregunta p={p} idx={idx} mine={studentAns[idx]} />
@@ -483,6 +502,23 @@ const EstudiantePAESRendir = () => {
               </h1>
               {simulacro?.descripcion && (
                 <p className="mt-3 max-w-2xl text-muted-foreground">{simulacro.descripcion}</p>
+              )}
+
+              {simulacro?.instrucciones && (
+                <Card className="mt-5 border-amber-300/50 bg-amber-50/60">
+                  <CardContent className="flex items-start gap-3 p-4">
+                    <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+                    <div>
+                      <p className="mb-1 text-sm font-semibold text-amber-900">Instrucciones</p>
+                      <RichText
+                        as="div"
+                        className="whitespace-pre-line text-sm leading-relaxed text-amber-900/90"
+                      >
+                        {simulacro.instrucciones}
+                      </RichText>
+                    </div>
+                  </CardContent>
+                </Card>
               )}
 
               <div className="mt-6">
@@ -679,6 +715,7 @@ const EstudiantePAESRendir = () => {
                     <ContextoBlock
                       texto={p.contexto}
                       label={`Texto ${textosOrden.indexOf(p.contexto) + 1}`}
+                      imgUrl={fileUrl(p, p.imagen_contexto)}
                     />
                   )}
                   <PreguntaInteractiva
@@ -783,6 +820,7 @@ const EstudiantePAESRendir = () => {
 // Pregunta interactiva (modo "taking"): enunciado + alternativas seleccionables.
 const PreguntaInteractiva = ({ p, idx, value, onChange }) => {
   const alts = Array.isArray(p.alternativas_json) ? p.alternativas_json : [];
+  const enunciadoImg = fileUrl(p, p.imagen_enunciado);
   return (
     <Card id={`pregunta-${idx + 1}`}>
       <CardContent className="p-4 sm:p-5">
@@ -796,7 +834,12 @@ const PreguntaInteractiva = ({ p, idx, value, onChange }) => {
                 {p.eje}
               </Badge>
             )}
-            <p className="whitespace-pre-line font-medium leading-relaxed">{p.enunciado}</p>
+            <RichText as="p" className="whitespace-pre-line font-medium leading-relaxed">
+              {p.enunciado}
+            </RichText>
+            {enunciadoImg && (
+              <img src={enunciadoImg} alt="" className="mt-2 max-h-80 w-auto rounded border bg-white object-contain" />
+            )}
           </div>
         </div>
 
@@ -807,19 +850,31 @@ const PreguntaInteractiva = ({ p, idx, value, onChange }) => {
           className="flex flex-col items-stretch gap-2"
           aria-label={`Pregunta ${idx + 1}`}
         >
-          {alts.map((alt) => (
-            <ToggleGroupItem
-              key={alt.letra}
-              value={alt.letra}
-              aria-label={`Alternativa ${alt.letra}`}
-              className="h-auto justify-start gap-3 whitespace-normal rounded-lg border px-3 py-2.5 text-left font-normal data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-foreground"
-            >
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold">
-                {alt.letra}
-              </span>
-              <span className="text-sm leading-snug">{alt.texto}</span>
-            </ToggleGroupItem>
-          ))}
+          {alts.map((alt) => {
+            const img = altImgUrl(p, alt.letra);
+            return (
+              <ToggleGroupItem
+                key={alt.letra}
+                value={alt.letra}
+                aria-label={`Alternativa ${alt.letra}`}
+                className="h-auto justify-start gap-3 whitespace-normal rounded-lg border px-3 py-2.5 text-left font-normal data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-foreground"
+              >
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold">
+                  {alt.letra}
+                </span>
+                <span className="min-w-0 flex-1">
+                  {alt.texto && (
+                    <RichText as="span" className="text-sm leading-snug">
+                      {alt.texto}
+                    </RichText>
+                  )}
+                  {img && (
+                    <img src={img} alt="" className="mt-1 max-h-44 w-auto rounded border bg-white object-contain" />
+                  )}
+                </span>
+              </ToggleGroupItem>
+            );
+          })}
         </ToggleGroup>
       </CardContent>
     </Card>
@@ -829,21 +884,35 @@ const PreguntaInteractiva = ({ p, idx, value, onChange }) => {
 // Pregunta en modo revisión (post-entrega): marca la correcta y la del alumno.
 const RevisionPregunta = ({ p, idx, mine }) => {
   const alts = Array.isArray(p.alternativas_json) ? p.alternativas_json : [];
+  const piloto = !!p.piloto;
   const correct = p.respuesta_correcta;
   const answered = !!mine;
-  const isCorrect = mine === correct;
+  const isCorrect = !piloto && mine === correct;
+  const enunciadoImg = fileUrl(p, p.imagen_enunciado);
 
   return (
-    <Card className={isCorrect ? 'border-success/40' : answered ? 'border-destructive/40' : ''}>
+    <Card
+      className={
+        piloto
+          ? 'border-info/30'
+          : isCorrect
+            ? 'border-success/40'
+            : answered
+              ? 'border-destructive/40'
+              : ''
+      }
+    >
       <CardContent className="p-4 sm:p-5">
         <div className="mb-3 flex items-start gap-3">
           <span
             className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-mono text-sm font-bold ${
-              isCorrect
-                ? 'bg-success/15 text-success'
-                : answered
-                  ? 'bg-destructive/15 text-destructive'
-                  : 'bg-muted text-muted-foreground'
+              piloto
+                ? 'bg-info/15 text-info'
+                : isCorrect
+                  ? 'bg-success/15 text-success'
+                  : answered
+                    ? 'bg-destructive/15 text-destructive'
+                    : 'bg-muted text-muted-foreground'
             }`}
           >
             {idx + 1}
@@ -855,7 +924,11 @@ const RevisionPregunta = ({ p, idx, mine }) => {
                   {p.eje}
                 </Badge>
               )}
-              {isCorrect ? (
+              {piloto ? (
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-info">
+                  <Sparkles className="h-3.5 w-3.5" /> Piloto · no puntúa
+                </span>
+              ) : isCorrect ? (
                 <span className="inline-flex items-center gap-1 text-xs font-semibold text-success">
                   <CheckCircle2 className="h-3.5 w-3.5" /> Correcta
                 </span>
@@ -867,14 +940,20 @@ const RevisionPregunta = ({ p, idx, mine }) => {
                 <span className="text-xs font-semibold text-muted-foreground">Sin responder</span>
               )}
             </div>
-            <p className="whitespace-pre-line font-medium leading-relaxed">{p.enunciado}</p>
+            <RichText as="p" className="whitespace-pre-line font-medium leading-relaxed">
+              {p.enunciado}
+            </RichText>
+            {enunciadoImg && (
+              <img src={enunciadoImg} alt="" className="mt-2 max-h-80 w-auto rounded border bg-white object-contain" />
+            )}
           </div>
         </div>
 
         <div className="space-y-1.5">
           {alts.map((alt) => {
-            const esCorrecta = alt.letra === correct;
+            const esCorrecta = !piloto && alt.letra === correct;
             const esTuya = alt.letra === mine;
+            const img = altImgUrl(p, alt.letra);
             return (
               <div
                 key={alt.letra}
@@ -882,7 +961,9 @@ const RevisionPregunta = ({ p, idx, mine }) => {
                   esCorrecta
                     ? 'border-success/50 bg-success/10'
                     : esTuya
-                      ? 'border-destructive/50 bg-destructive/10'
+                      ? piloto
+                        ? 'border-info/50 bg-info/10'
+                        : 'border-destructive/50 bg-destructive/10'
                       : 'border-transparent'
                 }`}
               >
@@ -891,15 +972,22 @@ const RevisionPregunta = ({ p, idx, mine }) => {
                     esCorrecta
                       ? 'border-success/50 text-success'
                       : esTuya
-                        ? 'border-destructive/50 text-destructive'
+                        ? piloto
+                          ? 'border-info/50 text-info'
+                          : 'border-destructive/50 text-destructive'
                         : 'text-muted-foreground'
                   }`}
                 >
                   {alt.letra}
                 </span>
-                <span className="flex-1 leading-snug">{alt.texto}</span>
+                <span className="min-w-0 flex-1 leading-snug">
+                  {alt.texto && <RichText as="span">{alt.texto}</RichText>}
+                  {img && (
+                    <img src={img} alt="" className="mt-1 max-h-44 w-auto rounded border bg-white object-contain" />
+                  )}
+                </span>
                 {esCorrecta && <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />}
-                {esTuya && !esCorrecta && (
+                {esTuya && !esCorrecta && !piloto && (
                   <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
                 )}
               </div>
@@ -910,7 +998,7 @@ const RevisionPregunta = ({ p, idx, mine }) => {
         {p.explicacion && (
           <div className="mt-3 rounded-lg bg-muted/50 p-3 text-sm leading-relaxed text-muted-foreground">
             <span className="font-semibold text-foreground">Explicación: </span>
-            {p.explicacion}
+            <RichText as="span">{p.explicacion}</RichText>
           </div>
         )}
       </CardContent>

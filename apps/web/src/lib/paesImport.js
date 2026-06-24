@@ -23,6 +23,37 @@ export const ESTADOS = [
 
 export const LETTERS = ['A', 'B', 'C', 'D', 'E'];
 
+export const DIFICULTADES = [
+  { value: 'facil', label: 'Fácil' },
+  { value: 'media', label: 'Media' },
+  { value: 'dificil', label: 'Difícil' },
+];
+
+export const DIFICULTAD_LABEL = {
+  facil: 'Fácil',
+  media: 'Media',
+  dificil: 'Difícil',
+};
+
+// Ejes/temarios sugeridos por asignatura. Son solo sugerencias para autocompletar:
+// el profe puede escribir cualquier eje.
+export const EJES_POR_ASIGNATURA = {
+  competencia_lectora: ['Localizar', 'Interpretar y relacionar', 'Evaluar y reflexionar'],
+  matematica_m1: ['Números', 'Álgebra y funciones', 'Geometría', 'Probabilidad y estadística'],
+  matematica_m2: ['Números', 'Álgebra y funciones', 'Geometría', 'Probabilidad y estadística', 'Cálculo'],
+  historia: ['Historia', 'Geografía', 'Formación ciudadana', 'Economía y sociedad'],
+  ciencias: ['Biología', 'Física', 'Química'],
+};
+
+// Normaliza el texto de dificultad (acepta acentos / variantes) a la clave interna.
+export function normDificultad(s) {
+  const t = String(s || '').toLowerCase().trim();
+  if (t.startsWith('fac') || t.startsWith('fác')) return 'facil';
+  if (t.startsWith('dif')) return 'dificil';
+  if (t.startsWith('med')) return 'media';
+  return '';
+}
+
 // Curva de conversión referencial 100–1000 según nº de preguntas. Misma fórmula
 // que usan los seeds de los mini-ensayos, para que el puntaje sea consistente.
 export const tablaConversionRef = (g) => [
@@ -34,11 +65,46 @@ export const tablaConversionRef = (g) => [
   { correctas: g, puntaje: 1000 },
 ];
 
+// --- Tabla de conversión personalizada (ej: tabla oficial DEMRE) ------------
+// Texto editable, una fila por línea con formato  "correctas: puntaje".
+export function serializeTabla(tabla) {
+  return (tabla || []).map((r) => `${r.correctas}: ${r.puntaje}`).join('\n');
+}
+
+export function parseTabla(raw) {
+  const rows = [];
+  for (const line of String(raw || '').split('\n')) {
+    const mm = line.match(/^\s*(\d+)\s*[:=\t-]\s*(\d+)\s*$/);
+    if (mm) rows.push({ correctas: parseInt(mm[1], 10), puntaje: parseInt(mm[2], 10) });
+  }
+  rows.sort((a, b) => a.correctas - b.correctas);
+  return rows;
+}
+
+// Valida la tabla. Devuelve un string de error o null si está OK.
+export function validateTabla(rows, maxCorrectas) {
+  if (!rows || !rows.length) {
+    return 'La tabla no tiene filas válidas (usá una línea "correctas: puntaje").';
+  }
+  const seen = new Set();
+  for (const r of rows) {
+    if (r.puntaje < 100 || r.puntaje > 1000) return `Puntaje fuera de rango (100–1000): ${r.puntaje}.`;
+    if (r.correctas < 0 || r.correctas > maxCorrectas) {
+      return `“Correctas” fuera de rango (0–${maxCorrectas}): ${r.correctas}.`;
+    }
+    if (seen.has(r.correctas)) return `Hay dos filas con ${r.correctas} correctas.`;
+    seen.add(r.correctas);
+  }
+  return null;
+}
+
 const RE_QUESTION = /^\s*(\d{1,3})\s*[.)]\s+(.*)$/;
 const RE_OPTION = /^\s*(\*?)\s*([A-Ea-e])\s*[).\-]\s+(.*)$/;
 const RE_KEY = /^\s*(?:correcta|clave|respuesta)\s*[:=]\s*([A-Ea-e])\s*$/i;
 const RE_EJE = /^\s*eje\s*[:=]\s*(.+)$/i;
 const RE_EXPL = /^\s*explicaci[oó]n\s*[:=]\s*(.+)$/i;
+const RE_DIF = /^\s*dificultad\s*[:=]\s*(.+)$/i;
+const RE_PILOTO = /^\s*piloto\s*$/i;
 const RE_CTX = /^\s*(?:texto|contexto)\s*[:=]?\s*(.*)$/i;
 const RE_SEP = /^\s*[-=]{3,}\s*$/;
 
@@ -103,6 +169,8 @@ export function parsePreguntas(raw) {
         alternativas: [],
         correcta: null,
         eje: '',
+        dificultad: '',
+        piloto: false,
         explicacion: '',
         contexto: activeContexto,
       };
@@ -139,6 +207,17 @@ export function parsePreguntas(raw) {
     const explM = RE_EXPL.exec(line);
     if (explM && current) {
       current.explicacion = explM[1].trim();
+      continue;
+    }
+
+    const difM = RE_DIF.exec(line);
+    if (difM && current) {
+      current.dificultad = normDificultad(difM[1]);
+      continue;
+    }
+
+    if (RE_PILOTO.test(line) && current) {
+      current.piloto = true;
       continue;
     }
 
@@ -189,7 +268,9 @@ export function validatePreguntas(questions) {
       issues.push({ level: 'error', q: n, msg: `Pregunta ${n}: hay una alternativa sin texto.` });
     }
     if (!q.correcta) {
-      issues.push({ level: 'error', q: n, msg: `Pregunta ${n}: no marcaste la correcta (usá * o una línea "Correcta: X").` });
+      if (!q.piloto) {
+        issues.push({ level: 'error', q: n, msg: `Pregunta ${n}: no marcaste la correcta (usá * o una línea "Correcta: X"). Si es piloto, marcala como tal.` });
+      }
     } else if (!letras.includes(q.correcta)) {
       issues.push({ level: 'error', q: n, msg: `Pregunta ${n}: la correcta (${q.correcta}) no está entre las alternativas.` });
     }
@@ -223,6 +304,8 @@ export function serializePreguntas(preguntas) {
       out.push(`${mark}${a.letra}) ${a.texto}`);
     });
     if (p.eje) out.push(`Eje: ${p.eje}`);
+    if (p.dificultad) out.push(`Dificultad: ${DIFICULTAD_LABEL[p.dificultad] || p.dificultad}`);
+    if (p.piloto) out.push('Piloto');
     if (p.explicacion) out.push(`Explicación: ${p.explicacion}`);
     out.push('');
   });
@@ -240,6 +323,7 @@ A) En las raíces
 C) En el tallo
 D) En las flores
 Eje: Biología
+Dificultad: Fácil
 Explicación: La fotosíntesis ocurre sobre todo en las hojas, donde están los cloroplastos.
 
 2. ¿Qué gas liberan las plantas durante la fotosíntesis?
@@ -251,9 +335,17 @@ Correcta: C
 
 ---
 
-3. ¿Cuánto es 15 + 27?
-A) 32
-B) 41
-*C) 42
-D) 52
+3. Las soluciones de $ax^2 + bx + c = 0$ son $x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$. ¿Qué expresión es el discriminante?
+A) $b^2 + 4ac$
+*B) $b^2 - 4ac$
+C) $2a$
+D) $-b$
+Eje: Álgebra y funciones
+Dificultad: Media
+
+4. Pregunta en prueba para calibrar dificultad (no suma puntaje).
+A) La entendí sin problemas
+B) Tuve algunas dudas
+C) No la entendí
+Piloto
 `;

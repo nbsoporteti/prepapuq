@@ -4,33 +4,44 @@ Lista priorizada de cosas por hacer. Marcá con `[x]` al completar.
 
 ## Fase 2 — operación (cursos + PAES interactiva + biblioteca + pizarra)
 
-Lo construido en la sesión 2026-06-24 (Fase 2 + Fase 2.1) necesita un redeploy
-del backend para quedar activo. Detalle del cambio en
+Lo construido en la sesión 2026-06-24 (Fase 2 + Fase 2.1 + Fase 2.2) necesita un
+redeploy del backend para quedar activo. Detalle del cambio en
 [`05-cambios-recientes.md`](05-cambios-recientes.md).
 
-- [ ] **Redeploy del backend PocketBase** para correr las **7 migraciones nuevas**
-  (`1781100100`–`1781100160`):
+- [ ] **Redeploy del backend PocketBase** para correr las **8 migraciones nuevas**
+  (`1781100100`–`1781100170`):
   - `…100`–`…120`: cursos de Ciencias, lecciones y asignación de la alumna demo.
   - `…130`–`…140`: extensión de `simulacros_paes` + `resultados_simulacro_paes` y
     seed de los 8 simulacros-PDF originales.
   - `…150`–`…160` (**Fase 2.1, PAES interactiva**): campo `modo`, **archiva los 8
     simulacros-PDF**, crea `preguntas_paes` y siembra los **7 mini-ensayos
     interactivos** con 70 preguntas originales.
+  - `…170` (**Fase 2.2, editor enriquecido**): agrega a `preguntas_paes` los campos
+    `dificultad`, `piloto` e `imagen_enunciado`/`imagen_contexto`/`imagen_a…e`, y a
+    `simulacros_paes` el campo `instrucciones`.
 
   Hasta el redeploy, los cursos y simulacros **no existen** en la DB. Tras correr,
   verificar en el admin PB: 3 cursos `materia="ciencias"`, 7 `simulacros_paes` con
   `modo="interactivo"` / `estado="publicado"` (los 8 PDF quedan `archivado`) y 70
-  filas en `preguntas_paes`.
+  filas en `preguntas_paes`. **El editor visual solo puede subir imágenes una vez
+  corrida la `…170`**; antes de eso falla al guardar archivos (los campos no existen).
 
 - [ ] **Revisión pedagógica del banco de preguntas (recomendado).** Que un profe
   revise las **70 preguntas originales** de PrePa (enunciados, alternativas, clave
   correcta y explicaciones) antes de abrirlas a estudiantes reales. Editables desde
   el panel admin (`preguntas_paes`) o con una migración nueva.
 
-- [ ] **Revisar la `tabla_conversion_json` de cada simulacro.** Hoy es
+- [ ] **Revisar la `tabla_conversion_json` de cada simulacro.** Por defecto es
   **referencial** (curva 100–1000 aproximada por nº de preguntas), no una tabla
-  oficial DEMRE. Si se quiere un puntaje más fiel, reemplazarla editando el
-  registro o con una migración nueva.
+  oficial DEMRE. Desde la Fase 2.2 el **editor visual permite pegar una tabla
+  personalizada** ("correctas: puntaje") por simulacro; usarla si se quiere un
+  puntaje más fiel. También editable por registro o migración.
+
+- [ ] **(Diferido) Puntaje personalizado por pregunta.** El editor visual permite
+  marcar preguntas **piloto** (no puntúan), pero no asignar un puntaje propio a cada
+  pregunta: el hook de corrección reparte el puntaje por la tabla de conversión sobre
+  el total que puntúa. Para puntajes ponderados habría que tocar el scoring
+  server-side (`pb_hooks/simulacros_paes.pb.js`). Decidir si vale la pena.
 
 - [ ] **(Futuro) Ampliar los mini-ensayos a largo PAES real.** Cada simulacro
   interactivo tiene hoy 10 preguntas (mini-ensayo de práctica). Para un ensayo
@@ -43,9 +54,10 @@ del backend para quedar activo. Detalle del cambio en
 > clave-DEMRE solo aplicaría si se reactivara algún simulacro-PDF archivado — y aun
 > así **nunca se transcriben los enunciados** (la licencia DEMRE lo prohíbe).
 
-- [ ] **Code-splitting del bundle web** — el `index.js` superó los 500 KB
-  (warning de Rollup en el build). No bloquea, pero conviene `React.lazy` por ruta
-  o `build.rollupOptions.output.manualChunks` para bajar el JS inicial.
+- [ ] **Code-splitting del bundle web** — el `index.js` ronda **1.46 MB** (gz ~430 KB)
+  tras sumar **KaTeX** en la Fase 2.2; Rollup tira el warning de >500 KB. No bloquea,
+  pero conviene `React.lazy` por ruta (sobre todo el editor PAES y `katex`) o
+  `build.rollupOptions.output.manualChunks` para bajar el JS inicial.
 
 ## Acción inmediata (antes del primer deploy)
 
