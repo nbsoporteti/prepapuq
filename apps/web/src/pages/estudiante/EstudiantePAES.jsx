@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, ArrowRight, GraduationCap, Sparkles, Target, TrendingUp } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Clock, GraduationCap, Library, ListChecks, PlayCircle, Sparkles, Target, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -45,13 +45,34 @@ const useResultadosPAES = (alumnoId) => useQuery({
   },
 });
 
+const useSimulacrosDisponibles = () => useQuery({
+  queryKey: ['paes', 'simulacros'],
+  staleTime: 60_000,
+  queryFn: async () => pb.collection('simulacros_paes').getFullList({
+    filter: 'estado = "publicado"',
+    sort: 'asignatura,titulo',
+    $autoCancel: false,
+  }),
+});
+
 const EstudiantePAES = ({ pupiloId }) => {
   const { currentUser } = useAuth();
   const targetId = pupiloId || currentUser?.id;
   const { data: resultados = [], isLoading } = useResultadosPAES(targetId);
+  const { data: simulacros = [] } = useSimulacrosDisponibles();
   const isApoderadoMode = !!pupiloId;
 
   const [carreraObjetivo, setCarreraObjetivo] = useState('');
+
+  // Mapa simulacro_id → resultado, para saber cuáles ya rindió el alumno.
+  const resultadoPorSimulacro = useMemo(() => {
+    const map = new Map();
+    for (const r of resultados) {
+      const sid = r.simulacro_id || r.expand?.simulacro_id?.id;
+      if (sid) map.set(sid, r);
+    }
+    return map;
+  }, [resultados]);
 
   // Mejor puntaje por asignatura
   const porAsignatura = useMemo(() => {
@@ -86,12 +107,74 @@ const EstudiantePAES = ({ pupiloId }) => {
         </Button>
       )}
 
-      <div>
-        <h2 className="font-display text-2xl font-bold">{isApoderadoMode ? 'PAES de mi pupilo' : 'Mi PAES'}</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Resultados de simulacros, percentil interno y comparación con cortes históricos de carreras chilenas.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="font-display text-2xl font-bold">{isApoderadoMode ? 'PAES de mi pupilo' : 'Mi PAES'}</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Resultados de simulacros, percentil interno y comparación con cortes históricos de carreras chilenas.
+          </p>
+        </div>
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/biblioteca">
+            <Library className="mr-2 h-4 w-4" />
+            Biblioteca PAES
+          </Link>
+        </Button>
       </div>
+
+      {/* Simulacros disponibles para rendir (solo en modo alumno) */}
+      {!isApoderadoMode && simulacros.length > 0 && (
+        <div>
+          <h3 className="font-semibold mb-3 flex items-center gap-2">
+            <PlayCircle className="h-4 w-4 text-primary" />
+            Simulacros para rendir
+          </h3>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {simulacros.map((s) => {
+              const yaRendido = resultadoPorSimulacro.get(s.id);
+              return (
+                <Card key={s.id} className="flex flex-col">
+                  <CardHeader className="pb-2">
+                    <Badge variant="secondary" className={`w-fit ${ASIGNATURA_COLOR[s.asignatura] || ''}`}>
+                      {ASIGNATURA_LABEL[s.asignatura] || s.asignatura}
+                    </Badge>
+                    <CardTitle className="text-base leading-snug mt-2">{s.titulo}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="mt-auto space-y-3">
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <ListChecks className="h-3.5 w-3.5" />
+                        <span className="font-mono tabular-nums">{s.n_preguntas_total}</span> preguntas
+                      </span>
+                      {s.duracion_min > 0 && (
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3.5 w-3.5" />
+                          <span className="font-mono tabular-nums">{s.duracion_min}</span> min
+                        </span>
+                      )}
+                    </div>
+                    {yaRendido ? (
+                      <Button variant="outline" size="sm" className="w-full" asChild>
+                        <Link to={`/dashboard/estudiante/paes/${s.id}`}>
+                          Ver resultado
+                          <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                        </Link>
+                      </Button>
+                    ) : (
+                      <Button size="sm" className="w-full" asChild>
+                        <Link to={`/dashboard/estudiante/paes/${s.id}`}>
+                          Rendir
+                          <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                        </Link>
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {isLoading ? (
         <Skeleton className="h-40 w-full" />

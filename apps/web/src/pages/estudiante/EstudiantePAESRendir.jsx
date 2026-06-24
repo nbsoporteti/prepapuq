@@ -1,0 +1,604 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  ArrowLeft,
+  Clock,
+  FileText,
+  Download,
+  ExternalLink,
+  Send,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  Sparkles,
+  ListChecks,
+  Target,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
+import pb from '@/lib/pocketbaseClient';
+import { useAuth } from '@/contexts/AuthContext.jsx';
+
+const LETTERS = ['A', 'B', 'C', 'D', 'E'];
+
+const ASIGNATURA_LABEL = {
+  competencia_lectora: 'Competencia Lectora',
+  matematica_m1: 'Matemática M1',
+  matematica_m2: 'Matemática M2',
+  historia: 'Historia y Ciencias Sociales',
+  ciencias: 'Ciencias',
+};
+
+const ASIGNATURA_COLOR = {
+  competencia_lectora: 'bg-info/10 text-info border-info/30',
+  matematica_m1: 'bg-primary/10 text-primary border-primary/30',
+  matematica_m2: 'bg-secondary/10 text-secondary border-secondary/30',
+  historia: 'bg-accent/15 text-accent border-accent/30',
+  ciencias: 'bg-success/10 text-success border-success/30',
+};
+
+const fmtTime = (totalSec) => {
+  const s = Math.max(0, totalSec);
+  const m = Math.floor(s / 60);
+  const ss = s % 60;
+  return `${String(m).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
+};
+
+// Panel del PDF del ensayo con fallbacks de abrir/descargar (por si el navegador
+// bloquea el iframe). Reutilizado en la intro y durante el desarrollo.
+const PdfPanel = ({ url, titulo, className = '' }) => {
+  if (!url) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed bg-muted/30 p-8 text-center text-sm text-muted-foreground">
+        <FileText className="mb-2 h-8 w-8 opacity-50" />
+        El PDF de este ensayo no está disponible.
+      </div>
+    );
+  }
+  return (
+    <div className={className}>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+          <FileText className="h-3.5 w-3.5" />
+          Enunciado del ensayo
+        </span>
+        <div className="flex gap-1.5">
+          <Button variant="outline" size="sm" asChild>
+            <a href={url} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+              Abrir
+            </a>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <a href={url} download>
+              <Download className="mr-1.5 h-3.5 w-3.5" />
+              Descargar
+            </a>
+          </Button>
+        </div>
+      </div>
+      <iframe
+        src={url}
+        title={titulo ? `Enunciado: ${titulo}` : 'Enunciado del ensayo'}
+        className="h-full min-h-[60vh] w-full rounded-xl border bg-card"
+      />
+    </div>
+  );
+};
+
+const EstudiantePAESRendir = () => {
+  const { simulacroId } = useParams();
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  const queryClient = useQueryClient();
+  const alumnoId = currentUser?.id;
+
+  const [phase, setPhase] = useState('loading'); // loading | error | intro | taking | done
+  const [errorMsg, setErrorMsg] = useState('');
+  const [simulacro, setSimulacro] = useState(null);
+  const [result, setResult] = useState(null);
+  const [answers, setAnswers] = useState([]);
+  const [timeLeftSec, setTimeLeftSec] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+
+  const submittedRef = useRef(false);
+  const startTsRef = useRef(null);
+
+  const nPreguntas = simulacro?.n_preguntas_total || 0;
+  const durationSec = (simulacro?.duracion_min || 0) * 60;
+
+  // --- Carga inicial: simulacro + intento existente -------------------------
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        setPhase('loading');
+        const sim = await pb.collection('simulacros_paes').getOne(simulacroId, {
+          $autoCancel: false,
+        });
+        if (!alive) return;
+        setSimulacro(sim);
+
+        // ¿Ya rindió este simulacro? (índice único alumno+simulacro)
+        let existing = null;
+        try {
+          existing = await pb
+            .collection('resultados_simulacro_paes')
+            .getFirstListItem(
+              `alumno_id = "${alumnoId}" && simulacro_id = "${simulacroId}"`,
+              { $autoCancel: false },
+            );
+        } catch (_e) {
+          existing = null;
+        }
+        if (!alive) return;
+
+        if (existing) {
+          setResult(existing);
+          setPhase('done');
+        } else {
+          setAnswers(new Array(sim.n_preguntas_total || 0).fill(''));
+          setPhase('intro');
+        }
+      } catch (err) {
+        console.error('Error cargando simulacro:', err);
+        if (!alive) return;
+        setErrorMsg('No pudimos cargar este simulacro.');
+        setPhase('error');
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [simulacroId, alumnoId]);
+
+  // --- Cronómetro -----------------------------------------------------------
+  useEffect(() => {
+    if (phase !== 'taking' || !durationSec) return undefined;
+    const id = setInterval(() => {
+      setTimeLeftSec((s) => Math.max(0, s - 1));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [phase, durationSec]);
+
+  // Auto-entrega al llegar a 0
+  useEffect(() => {
+    if (phase === 'taking' && durationSec && timeLeftSec === 0 && !submittedRef.current) {
+      handleSubmit(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeLeftSec, phase, durationSec]);
+
+  const answeredCount = useMemo(() => answers.filter(Boolean).length, [answers]);
+
+  const setAnswer = (idx, value) => {
+    setAnswers((prev) => {
+      const next = [...prev];
+      next[idx] = value || '';
+      return next;
+    });
+  };
+
+  const handleStart = () => {
+    submittedRef.current = false;
+    startTsRef.current = Date.now();
+    setTimeLeftSec(durationSec);
+    setPhase('taking');
+    window.scrollTo({ top: 0 });
+  };
+
+  const handleSubmit = async (auto = false) => {
+    if (submittedRef.current && !auto) return;
+    if (submittedRef.current && auto && submitting) return;
+    submittedRef.current = true;
+    setSubmitting(true);
+    try {
+      const elapsedSec = startTsRef.current
+        ? Math.round((Date.now() - startTsRef.current) / 1000)
+        : 0;
+      const tiempoMin = Math.max(0, Math.round(elapsedSec / 60));
+
+      const payload = {
+        simulacro_id: simulacro.id,
+        alumno_id: alumnoId,
+        // Enviamos solo las respuestas; el puntaje lo deriva el servidor.
+        respuestas_alumno_json: answers.map((a) => (a ? a : null)),
+        tiempo_usado_min: tiempoMin,
+        mostrar_en_ranking: true,
+      };
+
+      const created = await pb
+        .collection('resultados_simulacro_paes')
+        .create(payload, { $autoCancel: false });
+
+      setResult(created);
+      setPhase('done');
+      queryClient.invalidateQueries({ queryKey: ['paes', 'resultados', alumnoId] });
+      toast.success(auto ? 'Tiempo agotado: respuestas enviadas.' : 'Respuestas enviadas.');
+      window.scrollTo({ top: 0 });
+    } catch (err) {
+      console.error('Error enviando respuestas:', err);
+      submittedRef.current = false;
+      setSubmitting(false);
+      toast.error('No pudimos registrar tu intento. Intenta de nuevo.');
+    }
+  };
+
+  // ---------------------------------------------------------------- LOADING
+  if (phase === 'loading') {
+    return (
+      <div className="container mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
+        <Skeleton className="mb-4 h-8 w-2/3" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
+  // ---------------------------------------------------------------- ERROR
+  if (phase === 'error') {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center p-4 text-center">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+          <AlertCircle className="h-8 w-8" />
+        </div>
+        <h2 className="text-2xl font-bold">No disponible</h2>
+        <p className="mt-2 text-muted-foreground">{errorMsg}</p>
+        <Button className="mt-6" onClick={() => navigate('/dashboard/estudiante')}>
+          Volver al panel
+        </Button>
+      </div>
+    );
+  }
+
+  const asigLabel = ASIGNATURA_LABEL[simulacro?.asignatura] || simulacro?.asignatura;
+  const asigColor = ASIGNATURA_COLOR[simulacro?.asignatura] || '';
+
+  // ---------------------------------------------------------------- DONE
+  if (phase === 'done') {
+    const correctas = result?.respuestas_correctas;
+    const puntaje = result?.puntaje;
+    const graded = typeof puntaje === 'number' && puntaje > 0;
+    return (
+      <>
+        <Helmet>
+          <title>Resultado · {simulacro?.titulo} | PrePa</title>
+        </Helmet>
+        <div className="container mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
+          <Button
+            variant="ghost"
+            size="sm"
+            asChild
+            className="-ml-3 mb-6 text-muted-foreground"
+          >
+            <Link to="/dashboard/estudiante">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Volver al panel
+            </Link>
+          </Button>
+
+          <div className="mb-6 flex flex-wrap items-center gap-2">
+            <Badge variant="secondary" className={asigColor}>
+              {asigLabel}
+            </Badge>
+            <h1 className="text-2xl font-bold tracking-tight">{simulacro?.titulo}</h1>
+          </div>
+
+          {graded ? (
+            <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 via-card to-secondary/5">
+              <CardContent className="p-6 md:p-8">
+                <Badge variant="secondary" className="mb-3 border-0 bg-primary/10 text-primary">
+                  <Target className="mr-1.5 h-3 w-3" />
+                  Puntaje obtenido
+                </Badge>
+                <p className="font-mono text-6xl font-bold tabular-nums md:text-7xl">
+                  {puntaje}
+                  <span className="ml-2 text-base font-normal text-muted-foreground">/ 1000</span>
+                </p>
+                <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3">
+                  {typeof correctas === 'number' && (
+                    <Stat label="Respuestas correctas" value={correctas} />
+                  )}
+                  {typeof result?.percentil_interno === 'number' && (
+                    <Stat label="Percentil interno" value={`P${result.percentil_interno}`} />
+                  )}
+                  {typeof result?.tiempo_usado_min === 'number' && (
+                    <Stat label="Tiempo usado" value={`${result.tiempo_usado_min} min`} />
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-dashed">
+              <CardContent className="flex items-start gap-3 p-6">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success/10 text-success">
+                  <CheckCircle2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Intento registrado en modo práctica</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Guardamos tus respuestas. El clavijero oficial de este ensayo todavía no
+                    está cargado, así que el puntaje se calculará automáticamente apenas el
+                    equipo lo publique. Te avisaremos cuando esté tu resultado.
+                  </p>
+                  {typeof result?.tiempo_usado_min === 'number' && (
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      Tiempo usado:{' '}
+                      <span className="font-mono tabular-nums">{result.tiempo_usado_min} min</span>
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Button asChild variant="outline">
+              <Link to="/dashboard/estudiante">
+                <Sparkles className="mr-2 h-4 w-4" />
+                Ver mi PAES
+              </Link>
+            </Button>
+            {simulacro?.pdf_url && (
+              <Button asChild variant="ghost">
+                <a href={simulacro.pdf_url} target="_blank" rel="noopener noreferrer">
+                  <FileText className="mr-2 h-4 w-4" />
+                  Revisar el ensayo
+                </a>
+              </Button>
+            )}
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // ---------------------------------------------------------------- INTRO
+  if (phase === 'intro') {
+    return (
+      <>
+        <Helmet>
+          <title>Rendir · {simulacro?.titulo} | PrePa</title>
+        </Helmet>
+        <div className="container mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
+          <Button
+            variant="ghost"
+            size="sm"
+            asChild
+            className="-ml-3 mb-6 text-muted-foreground"
+          >
+            <Link to="/dashboard/estudiante">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Volver al panel
+            </Link>
+          </Button>
+
+          <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
+            <div>
+              <Badge variant="secondary" className={`mb-3 ${asigColor}`}>
+                {asigLabel}
+              </Badge>
+              <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
+                {simulacro?.titulo}
+              </h1>
+              {simulacro?.descripcion && (
+                <p className="mt-3 max-w-2xl text-muted-foreground">{simulacro.descripcion}</p>
+              )}
+
+              <div className="mt-6">
+                <PdfPanel
+                  url={simulacro?.pdf_url}
+                  titulo={simulacro?.titulo}
+                  className="h-[60vh]"
+                />
+              </div>
+            </div>
+
+            <aside className="lg:sticky lg:top-20 lg:self-start">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Antes de comenzar</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 text-sm">
+                  <ul className="space-y-3">
+                    <InfoRow icon={ListChecks} label="Preguntas">
+                      <span className="font-mono tabular-nums">{nPreguntas}</span> alternativas
+                    </InfoRow>
+                    <InfoRow icon={Clock} label="Tiempo">
+                      {simulacro?.duracion_min ? (
+                        <>
+                          <span className="font-mono tabular-nums">{simulacro.duracion_min}</span>{' '}
+                          minutos
+                        </>
+                      ) : (
+                        'Sin límite'
+                      )}
+                    </InfoRow>
+                  </ul>
+
+                  <div className="rounded-lg bg-muted/50 p-3 text-xs leading-relaxed text-muted-foreground">
+                    Lee los enunciados en el PDF y marca tu alternativa (A–E) en la hoja de
+                    respuestas. El cronómetro empieza al presionar <strong>Comenzar</strong> y al
+                    llegar a cero se entrega automáticamente. Al terminar verás tu resultado; si el
+                    clavijero oficial aún no está cargado, tu intento queda guardado y se corrige
+                    apenas se publique.
+                  </div>
+
+                  <Button className="w-full" size="lg" onClick={handleStart}>
+                    Comenzar
+                  </Button>
+                </CardContent>
+              </Card>
+            </aside>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // ---------------------------------------------------------------- TAKING
+  const lowTime = durationSec && timeLeftSec <= 60;
+  const midTime = durationSec && timeLeftSec <= 300 && timeLeftSec > 60;
+  const progressPct = nPreguntas ? Math.round((answeredCount / nPreguntas) * 100) : 0;
+
+  return (
+    <>
+      <Helmet>
+        <title>Rindiendo · {simulacro?.titulo} | PrePa</title>
+      </Helmet>
+
+      {/* Barra de acción fija (debajo del header global de 64px) */}
+      <div className="sticky top-16 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <div className="container mx-auto flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-4">
+            {durationSec ? (
+              <div
+                className={`flex items-center gap-2 rounded-lg px-3 py-1.5 font-mono text-lg font-bold tabular-nums ${
+                  lowTime
+                    ? 'bg-destructive/10 text-destructive'
+                    : midTime
+                      ? 'bg-warning/10 text-warning-foreground'
+                      : 'bg-muted text-foreground'
+                }`}
+                role="timer"
+                aria-live={lowTime ? 'assertive' : 'off'}
+              >
+                <Clock className="h-4 w-4" />
+                {fmtTime(timeLeftSec)}
+              </div>
+            ) : (
+              <Badge variant="outline">Sin límite de tiempo</Badge>
+            )}
+            <div className="hidden sm:block">
+              <p className="text-xs text-muted-foreground">
+                Respondidas{' '}
+                <span className="font-mono tabular-nums text-foreground">
+                  {answeredCount}/{nPreguntas}
+                </span>
+              </p>
+              <Progress value={progressPct} className="mt-1 h-1.5 w-40" />
+            </div>
+          </div>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button disabled={submitting}>
+                {submitting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="mr-2 h-4 w-4" />
+                )}
+                Entregar
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>¿Entregar tus respuestas?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Respondiste {answeredCount} de {nPreguntas} preguntas
+                  {answeredCount < nPreguntas && (
+                    <> — quedan {nPreguntas - answeredCount} sin marcar</>
+                  )}
+                  . No podrás volver a rendir este simulacro una vez entregado.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Seguir respondiendo</AlertDialogCancel>
+                <AlertDialogAction onClick={() => handleSubmit(false)}>
+                  Entregar ahora
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </div>
+
+      <div className="container mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* PDF */}
+          <PdfPanel
+            url={simulacro?.pdf_url}
+            titulo={simulacro?.titulo}
+            className="lg:sticky lg:top-32 lg:h-[calc(100vh-9rem)]"
+          />
+
+          {/* Hoja de respuestas */}
+          <div>
+            <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold">
+              <ListChecks className="h-5 w-5 text-primary" />
+              Hoja de respuestas
+            </h2>
+            <Card>
+              <CardContent className="grid grid-cols-1 gap-1 p-3 sm:grid-cols-2">
+                {answers.map((value, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-2 rounded-lg px-2 py-1.5 odd:bg-muted/30"
+                  >
+                    <span className="w-7 shrink-0 text-right font-mono text-sm tabular-nums text-muted-foreground">
+                      {idx + 1}
+                    </span>
+                    <ToggleGroup
+                      type="single"
+                      value={value}
+                      onValueChange={(v) => setAnswer(idx, v)}
+                      className="justify-start gap-1"
+                      aria-label={`Pregunta ${idx + 1}`}
+                    >
+                      {LETTERS.map((l) => (
+                        <ToggleGroupItem
+                          key={l}
+                          value={l}
+                          aria-label={`Pregunta ${idx + 1}, alternativa ${l}`}
+                          className="h-8 w-8 rounded-full border data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                        >
+                          {l}
+                        </ToggleGroupItem>
+                      ))}
+                    </ToggleGroup>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+const Stat = ({ label, value }) => (
+  <div>
+    <p className="font-mono text-2xl font-bold tabular-nums">{value}</p>
+    <p className="text-xs text-muted-foreground">{label}</p>
+  </div>
+);
+
+const InfoRow = ({ icon: Icon, label, children }) => (
+  <li className="flex items-center justify-between gap-3">
+    <span className="flex items-center gap-2 text-muted-foreground">
+      <Icon className="h-4 w-4" />
+      {label}
+    </span>
+    <span className="font-medium text-foreground">{children}</span>
+  </li>
+);
+
+export default EstudiantePAESRendir;

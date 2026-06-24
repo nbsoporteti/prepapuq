@@ -181,3 +181,45 @@
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
 }
+
+@layer components {
+  /*
+   * .prose-prepa — estilos tipográficos para HTML de confianza renderizado con
+   * dangerouslySetInnerHTML (syllabus de cursos). Evita depender del plugin
+   * @tailwindcss/typography. Las reglas (clase + elemento) ganan en
+   * especificidad a las reglas base de h2/h3/p.
+   */
+  .prose-prepa {
+    @apply text-foreground;
+  }
+  .prose-prepa > :first-child {
+    @apply mt-0;
+  }
+  .prose-prepa h2 {
+    @apply text-xl md:text-2xl font-bold mt-8 mb-3 text-foreground tracking-tight;
+  }
+  .prose-prepa h3 {
+    @apply text-base md:text-lg font-semibold mt-6 mb-2 text-foreground;
+  }
+  .prose-prepa p {
+    @apply text-sm md:text-base leading-relaxed text-muted-foreground my-3 max-w-none;
+  }
+  .prose-prepa ul {
+    @apply list-disc pl-5 my-3 space-y-1.5 text-sm md:text-base text-muted-foreground;
+  }
+  .prose-prepa ol {
+    @apply list-decimal pl-5 my-3 space-y-1.5 text-sm md:text-base text-muted-foreground;
+  }
+  .prose-prepa li {
+    @apply leading-relaxed max-w-none;
+  }
+  .prose-prepa strong {
+    @apply font-semibold text-foreground;
+  }
+  .prose-prepa em {
+    @apply italic;
+  }
+  .prose-prepa a {
+    @apply text-primary underline underline-offset-2 hover:text-primary/80;
+  }
+}

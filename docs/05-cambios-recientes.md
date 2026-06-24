@@ -5,6 +5,109 @@ de Horizons con bugs" a "listo para deploy en VPS propio").
 
 ---
 
+## 2026-06-24 — Fase 2: cursos de Ciencias, PAES interactivo, biblioteca y pizarra
+
+Sesión de contenido + interactividad. Se construyeron los 3 cursos de Ciencias
+con material real, los simulacros PAES rendibles dentro del sistema, una
+biblioteca de descargas y una pizarra lateral de apoyo. Todo el contenido nuevo
+entra por **migraciones append-only** (timestamps `1781100100`–`1781100140`) y
+un hook de scoring server-side.
+
+### 1. Cursos de Ciencias (Biología / Física / Química)
+
+- **Migración `1781100100_seed_cursos_ciencias.js`** — 3 cursos `materia="ciencias"`
+  con `syllabus_markdown` (campo *editor*/HTML de PocketBase) con el temario real
+  estructurado por unidades, más `color_tema` / `icono` por curso
+  (bio→`success`/`Dna`, fís→`info`/`Atom`, quí→`accent`/`FlaskConical`).
+- **Migración `1781100110_seed_lecciones_ciencias.js`** — lecciones planas y
+  ordenadas (`orden`, `publicada`) con un `video_url` de YouTube curado y
+  verificado por lección.
+- **Migración `1781100120_seed_asignaciones_camila_ciencias.js`** — matricula a
+  la alumna demo (camila) en los 3 cursos vía la colección legacy `asignaciones`,
+  para poder ver el flujo completo sin tocar el panel admin.
+- **`CourseDetailPage.jsx` reescrita** — diseño accesible con hero temático y
+  `<Tabs>`: **Lecciones** (acordeón numerado con descripción, duración y video),
+  **Temario** (HTML del syllabus renderizado en una clase `.prose-prepa` propia,
+  sin depender del plugin typography) y **Material**.
+- **`LeccionVideo.jsx` (nuevo)** — player de YouTube *lazy*: muestra el thumbnail
+  y solo inyecta el iframe (`youtube-nocookie`) al hacer click. Mejor rendimiento
+  y privacidad; `aria-label` por video. `parseYouTubeId()` acepta watch/youtu.be/
+  embed/shorts/ID pelado.
+- **`.prose-prepa` en `index.css`** — estilos tipográficos para el HTML confiable
+  del syllabus (h2/h3/p/ul/ol/strong/a), bajo `@layer components`.
+
+### 2. PAES integrada y rendible (hoja de respuestas + cronómetro + resultados)
+
+Diseño **anti-trampa por hoja de respuestas**: por la cláusula DEMRE de "no
+reproducir las preguntas para entrenar IA", **no se transcribe ningún enunciado**.
+El alumno lee el PDF del ensayo y marca A–E en una hoja interactiva.
+
+- **Migración `1781100130_extend_simulacros_paes_interactivo.js`** — agrega a
+  `simulacros_paes` los campos `clave_respuestas_json`, `pdf_url` y `duracion_min`;
+  agrega `respuestas_alumno_json` a `resultados_simulacro_paes`; y abre el
+  `createRule` de resultados a `@request.auth.id = alumno_id` (o admin/profesor),
+  para que el propio alumno registre su intento.
+- **Migración `1781100140_seed_simulacros_paes.js`** — 8 simulacros publicados
+  enlazados a los ensayos de `/biblioteca`, con metadata (asignatura, nº de
+  preguntas, duración) y `tabla_conversion_json` **referencial**. **No** siembra
+  clave → arrancan en *modo práctica*.
+- **Hook `simulacros_paes.pb.js` (nuevo)** — scoring 100% server-side:
+  1. si hay clave, **deriva** `respuestas_correctas` comparando respuestas vs
+     clave (ignora lo que mande el cliente; las posiciones con clave `null` son
+     piloto y no puntúan);
+  2. convierte correctas → puntaje interpolando la `tabla_conversion_json`;
+  3. recalcula `percentil_interno` contra los otros resultados del mismo simulacro.
+  Si aún no hay clave, el intento se guarda **sin puntaje**; cuando un admin carga
+  la clave, `onRecordAfterUpdateSuccess` **re-corrige todos** los intentos de ese
+  simulacro automáticamente.
+- **`EstudiantePAESRendir.jsx` (nuevo)** — ruta `/dashboard/estudiante/paes/:id`.
+  Pantallas intro → rindiendo → hecho. Barra fija con **cronómetro** (umbrales de
+  color a 5 min y 1 min), barra de progreso y diálogo de "Entregar". PDF embebido
+  (abrir/descargar) junto a la hoja de respuestas (ToggleGroup A–E por pregunta,
+  con `aria-label`). Al entregar **solo** envía `respuestas_alumno_json` + tiempo
+  (nunca el puntaje). Si vuelve, ve su resultado (puntaje/correctas/percentil si ya
+  hay clave, o aviso de "modo práctica" si todavía no).
+- **`EstudiantePAES.jsx`** — nueva sección "Simulacros para rendir" (visible aunque
+  el alumno no tenga resultados aún) + botón a la Biblioteca.
+
+### 3. Biblioteca de descargas
+
+- **`BibliotecaPage.jsx` (nuevo)** — ruta `/biblioteca` (cualquier autenticado).
+  3 temarios + 8 ensayos servidos desde `apps/web/public/biblioteca/` (nginx), con
+  botones Abrir / Descargar. Linkeada desde el Header (desktop dropdown + menú
+  mobile) y desde "Mi PAES".
+
+### 4. Pizarra lateral de apoyo (dibujo + notas)
+
+- **`PizarraContext.jsx` + `PizarraPanel.jsx` (nuevos)** — panel lateral global
+  (no-modal, siempre montado y desplazado fuera de pantalla para conservar el
+  estado) que se abre desde el Header. Pestaña **Dibujo** (canvas con lápiz/goma,
+  6 colores, grosor, deshacer, limpiar — Pointer Events + `setPointerCapture`) y
+  pestaña **Notas** (textarea). Persistido en `localStorage` por usuario
+  (`prepa:pizarra:draw:<uid>` / `:notes:<uid>`). Cierre con `Esc`, foco al abrir,
+  `aria-label`. Montado en `App.jsx` envuelto por `PizarraProvider`.
+
+### Verificación
+
+| Check            | Resultado                                              |
+| ---------------- | ------------------------------------------------------ |
+| `npm run lint`   | ✓ Sin errores                                          |
+| `vite build`     | ✓ 14.5 s — `index.js` 1.147 MB (gz 337 KB) + CSS 146 KB (gz 39 KB) |
+
+> El bundle pasó los 500 KB (warning de Rollup). No es bloqueante; queda anotado
+> en pendientes como candidato a *code-splitting* / `manualChunks`.
+
+### ⚠️ Operación: dos pasos manuales para activar todo
+
+1. **Redeploy del backend** para correr las 5 migraciones nuevas (cursos,
+   lecciones, asignaciones, extensión PAES, seeds de simulacros). Hasta entonces
+   los cursos y simulacros no existen en la DB.
+2. **Cargar la clave DEMRE por simulacro** (`clave_respuestas_json`) desde el panel
+   admin cuando DEMRE publique el clavijero. Sin clave, los simulacros corren en
+   *modo práctica* (se registra el intento, sin puntaje). Al cargarla, el hook
+   re-corrige los intentos ya rendidos solo. **Nunca transcribir los enunciados.**
+
+
 ## 2026-06-24 — Limpieza final de Horizons + branding PrePa
 
 Ya en producción (prepapuq.cl con cert Let's Encrypt), se sacó **todo** rastro

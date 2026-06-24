@@ -2,6 +2,38 @@
 
 Lista priorizada de cosas por hacer. Marcá con `[x]` al completar.
 
+## Fase 2 — operación (cursos + PAES + biblioteca + pizarra)
+
+Lo construido en la sesión 2026-06-24 (Fase 2) necesita dos pasos manuales para
+quedar 100% activo en producción. Detalle del cambio en
+[`05-cambios-recientes.md`](05-cambios-recientes.md).
+
+- [ ] **Redeploy del backend PocketBase** para correr las 5 migraciones nuevas
+  (`1781100100`–`1781100140`: cursos de Ciencias, lecciones, asignación de la
+  alumna demo, extensión de `simulacros_paes` + `resultados_simulacro_paes`, y
+  seed de los 8 simulacros). Hasta el redeploy, los cursos y simulacros **no
+  existen** en la DB. Tras correr, verificar en el admin PB que aparecen los 3
+  cursos `materia="ciencias"` y los 8 `simulacros_paes` en estado `publicado`.
+
+- [ ] **Cargar la clave DEMRE por simulacro** (`clave_respuestas_json`) desde el
+  panel admin, cuando DEMRE publique el clavijero oficial de cada ensayo. Formato:
+  array de `"A"`..`"E"` (o `null` en las posiciones de preguntas piloto, que no
+  puntúan). Sin clave, el simulacro corre en **modo práctica**: el alumno marca y
+  su intento se registra, pero sin puntaje. Al guardar la clave, el hook
+  `simulacros_paes.pb.js` **re-corrige automáticamente** todos los intentos ya
+  rendidos de ese simulacro.
+  > ⚠️ **No transcribir los enunciados** de los PDFs DEMRE al sistema (su licencia
+  > prohíbe reproducir las preguntas para entrenar IA). Solo se carga el clavijero.
+
+- [ ] **Revisar la `tabla_conversion_json` de cada simulacro.** Hoy es
+  **referencial** (curva 100–1000 aproximada por nº de preguntas), no la tabla
+  oficial DEMRE de ese ensayo. Si se quiere un puntaje fiel, reemplazarla por la
+  tabla real cuando exista (editando el registro, o con una migración nueva).
+
+- [ ] **Code-splitting del bundle web** — el `index.js` superó los 500 KB
+  (warning de Rollup en el build). No bloquea, pero conviene `React.lazy` por ruta
+  o `build.rollupOptions.output.manualChunks` para bajar el JS inicial.
+
 ## Acción inmediata (antes del primer deploy)
 
 - [ ] **Revocar credenciales OAuth de Google expuestas**

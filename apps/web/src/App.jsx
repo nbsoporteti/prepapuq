@@ -18,6 +18,8 @@ import ProfesorCalificarTareaPage from './pages/profesor/ProfesorCalificarTareaP
 import CalificarEvaluacionBulk from './pages/profesor/CalificarEvaluacionBulk.jsx';
 import EstudianteTareasPage from './pages/estudiante/EstudianteTareasPage.jsx';
 import EstudianteTareaDetailPage from './pages/estudiante/EstudianteTareaDetailPage.jsx';
+import EstudiantePAESRendir from './pages/estudiante/EstudiantePAESRendir.jsx';
+import BibliotecaPage from './pages/BibliotecaPage.jsx';
 import AdministrativoDashboard from './pages/administrativo/AdministrativoDashboard.jsx';
 import NotificacionesPage from './pages/NotificacionesPage.jsx';
 import AnunciosPage from './pages/AnunciosPage.jsx';
@@ -25,15 +27,19 @@ import PerfilGeneral from './pages/PerfilGeneral.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
 import ProtectedRoute from '@/components/ProtectedRoute.jsx';
 import { AuthProvider } from '@/contexts/AuthContext.jsx';
+import { PizarraProvider } from '@/contexts/PizarraContext.jsx';
 import Header from '@/components/Header.jsx';
+import PizarraPanel from '@/components/pizarra/PizarraPanel.jsx';
 
 function App() {
   return (
     <Router>
       <ScrollToTop />
       <AuthProvider>
+       <PizarraProvider>
         <div className="flex flex-col min-h-screen">
           <Header />
+          <PizarraPanel />
           <main className="flex-1">
             <Routes>
               <Route path="/" element={<HomePage />} />
@@ -133,6 +139,24 @@ function App() {
               />
 
               <Route
+                path="/dashboard/estudiante/paes/:simulacroId"
+                element={
+                  <ProtectedRoute allowedRole="estudiante">
+                    <EstudiantePAESRendir />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/biblioteca"
+                element={
+                  <ProtectedRoute>
+                    <BibliotecaPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
                 path="/dashboard/administrativo"
                 element={
                   <ProtectedRoute allowedRoles={["administrativo", "admin"]}>
@@ -169,6 +193,7 @@ function App() {
             </Routes>
           </main>
         </div>
+       </PizarraProvider>
       </AuthProvider>
       <Toaster />
     </Router>

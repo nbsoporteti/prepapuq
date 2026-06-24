@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, LogOut, LayoutDashboard, MessageCircle, User } from 'lucide-react';
+import { Menu, LogOut, LayoutDashboard, MessageCircle, User, PenLine, Library } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +15,7 @@ import RolContextSwitcher from '@/components/shared/RolContextSwitcher.jsx';
 import NotificationsBell from '@/components/notif/NotificationsBell.jsx';
 import MessengerSheet from '@/components/mensajes/MessengerSheet.jsx';
 import { useMessenger } from '@/hooks/useMessenger.js';
+import { usePizarra } from '@/contexts/PizarraContext.jsx';
 
 const DASHBOARD_POR_ROL = {
   estudiante: '/dashboard/estudiante',
@@ -31,6 +32,7 @@ const Header = () => {
   const navigate = useNavigate();
   const { isAuthenticated, currentUser, logout, rolActivo, rolesEffective } = useAuth();
   const { unreadTotal } = useMessenger(currentUser?.id);
+  const { toggle: togglePizarra } = usePizarra();
 
   const isHomePage = location.pathname === '/';
 
@@ -125,6 +127,16 @@ const Header = () => {
                   )}
                 </Button>
 
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Abrir pizarra"
+                  className="text-muted-foreground hover:text-foreground"
+                  onClick={togglePizarra}
+                >
+                  <PenLine className="h-4 w-4" />
+                </Button>
+
                 <NotificationsBell />
 
                 <Button variant="outline" size="sm" asChild className="hidden md:inline-flex">
@@ -158,6 +170,12 @@ const Header = () => {
                       <Link to="/perfil">
                         <User className="h-4 w-4 mr-2" />
                         Mi perfil
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/biblioteca">
+                        <Library className="h-4 w-4 mr-2" />
+                        Biblioteca PAES
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
@@ -209,6 +227,23 @@ const Header = () => {
                         <LayoutDashboard className="mr-2 h-4 w-4 text-secondary" />
                         Mi Panel
                       </Link>
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start" asChild onClick={() => setIsOpen(false)}>
+                      <Link to="/biblioteca">
+                        <Library className="mr-2 h-4 w-4 text-primary" />
+                        Biblioteca PAES
+                      </Link>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start"
+                      onClick={() => {
+                        togglePizarra();
+                        setIsOpen(false);
+                      }}
+                    >
+                      <PenLine className="mr-2 h-4 w-4 text-primary" />
+                      Pizarra
                     </Button>
                     <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-destructive" onClick={handleLogout}>
                       <LogOut className="mr-2 h-4 w-4" />
