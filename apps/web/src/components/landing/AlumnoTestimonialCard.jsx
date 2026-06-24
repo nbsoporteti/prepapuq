@@ -1,12 +1,12 @@
 import React from 'react';
-import { Quote } from 'lucide-react';
+import { Quote, GraduationCap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import pb from '@/lib/pocketbaseClient';
 
 /**
  * Card de testimonio para "Nuestros exalumnos". Diseño con cita destacada y
- * badge signature "🎓 {carrera} · {universidad}" abajo.
+ * badge con birrete + {carrera} · {universidad} abajo.
  */
 const AlumnoTestimonialCard = ({ testimonio, className }) => {
   if (!testimonio) return null;
@@ -44,8 +44,9 @@ const AlumnoTestimonialCard = ({ testimonio, className }) => {
             {testimonio.nombre_alumno}
           </p>
           {testimonio.carrera && testimonio.universidad && (
-            <Badge variant="secondary" className="mt-1 bg-primary/10 text-primary border-0 font-medium">
-              🎓 {testimonio.carrera} · {testimonio.universidad}
+            <Badge variant="secondary" className="mt-1 inline-flex items-center gap-1 bg-primary/10 text-primary border-0 font-medium">
+              <GraduationCap className="h-3.5 w-3.5" aria-hidden="true" />
+              {testimonio.carrera} · {testimonio.universidad}
             </Badge>
           )}
           {(!testimonio.carrera || !testimonio.universidad) && testimonio.promocion_anio && (
