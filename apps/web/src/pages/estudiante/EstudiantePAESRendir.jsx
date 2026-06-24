@@ -11,10 +11,13 @@ import {
   Send,
   Loader2,
   CheckCircle2,
+  XCircle,
   AlertCircle,
   Sparkles,
   ListChecks,
   Target,
+  BookOpen,
+  GraduationCap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -63,7 +66,8 @@ const fmtTime = (totalSec) => {
 };
 
 // Panel del PDF del ensayo con fallbacks de abrir/descargar (por si el navegador
-// bloquea el iframe). Reutilizado en la intro y durante el desarrollo.
+// bloquea el iframe). Se usa solo en simulacros en modo "pdf" (los oficiales),
+// que hoy quedan archivados; el contenido nuevo es interactivo.
 const PdfPanel = ({ url, titulo, className = '' }) => {
   if (!url) {
     return (
@@ -104,6 +108,22 @@ const PdfPanel = ({ url, titulo, className = '' }) => {
   );
 };
 
+// Bloque de texto base (lecturas de Competencia Lectora) compartido por varias
+// preguntas. Se muestra una sola vez, encabezando el grupo.
+const ContextoBlock = ({ texto, label }) => (
+  <Card className="border-info/30 bg-info/5">
+    <CardContent className="p-4 sm:p-5">
+      <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-info">
+        <BookOpen className="h-3.5 w-3.5" />
+        {label || 'Texto'}
+      </div>
+      <div className="whitespace-pre-line text-sm leading-relaxed text-foreground/90">
+        {texto}
+      </div>
+    </CardContent>
+  </Card>
+);
+
 const EstudiantePAESRendir = () => {
   const { simulacroId } = useParams();
   const navigate = useNavigate();
@@ -114,6 +134,7 @@ const EstudiantePAESRendir = () => {
   const [phase, setPhase] = useState('loading'); // loading | error | intro | taking | done
   const [errorMsg, setErrorMsg] = useState('');
   const [simulacro, setSimulacro] = useState(null);
+  const [preguntas, setPreguntas] = useState([]);
   const [result, setResult] = useState(null);
   const [answers, setAnswers] = useState([]);
   const [timeLeftSec, setTimeLeftSec] = useState(0);
@@ -122,10 +143,25 @@ const EstudiantePAESRendir = () => {
   const submittedRef = useRef(false);
   const startTsRef = useRef(null);
 
-  const nPreguntas = simulacro?.n_preguntas_total || 0;
+  const interactivo = preguntas.length > 0;
+  const nPreguntas = interactivo ? preguntas.length : simulacro?.n_preguntas_total || 0;
   const durationSec = (simulacro?.duracion_min || 0) * 60;
 
-  // --- Carga inicial: simulacro + intento existente -------------------------
+  // Orden de aparición de los textos base, para etiquetarlos "Texto 1", "Texto 2"…
+  const textosOrden = useMemo(() => {
+    const seen = [];
+    for (const p of preguntas) {
+      if (p.contexto && !seen.includes(p.contexto)) seen.push(p.contexto);
+    }
+    return seen;
+  }, [preguntas]);
+
+  const ejes = useMemo(
+    () => [...new Set(preguntas.map((p) => p.eje).filter(Boolean))],
+    [preguntas],
+  );
+
+  // --- Carga inicial: simulacro + preguntas + intento existente -------------
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -136,6 +172,20 @@ const EstudiantePAESRendir = () => {
         });
         if (!alive) return;
         setSimulacro(sim);
+
+        // Preguntas interactivas (si el simulacro las tiene). Modo PDF = sin preguntas.
+        let pregs = [];
+        try {
+          pregs = await pb.collection('preguntas_paes').getFullList({
+            filter: `simulacro_id = "${simulacroId}"`,
+            sort: 'numero',
+            $autoCancel: false,
+          });
+        } catch (_e) {
+          pregs = [];
+        }
+        if (!alive) return;
+        setPreguntas(pregs);
 
         // ¿Ya rindió este simulacro? (índice único alumno+simulacro)
         let existing = null;
@@ -155,7 +205,8 @@ const EstudiantePAESRendir = () => {
           setResult(existing);
           setPhase('done');
         } else {
-          setAnswers(new Array(sim.n_preguntas_total || 0).fill(''));
+          const n = pregs.length > 0 ? pregs.length : sim.n_preguntas_total || 0;
+          setAnswers(new Array(n).fill(''));
           setPhase('intro');
         }
       } catch (err) {
@@ -276,6 +327,9 @@ const EstudiantePAESRendir = () => {
     const correctas = result?.respuestas_correctas;
     const puntaje = result?.puntaje;
     const graded = typeof puntaje === 'number' && puntaje > 0;
+    const studentAns = Array.isArray(result?.respuestas_alumno_json)
+      ? result.respuestas_alumno_json
+      : [];
     return (
       <>
         <Helmet>
@@ -314,7 +368,10 @@ const EstudiantePAESRendir = () => {
                 </p>
                 <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3">
                   {typeof correctas === 'number' && (
-                    <Stat label="Respuestas correctas" value={correctas} />
+                    <Stat
+                      label="Respuestas correctas"
+                      value={interactivo ? `${correctas}/${nPreguntas}` : correctas}
+                    />
                   )}
                   {typeof result?.percentil_interno === 'number' && (
                     <Stat label="Percentil interno" value={`P${result.percentil_interno}`} />
@@ -349,7 +406,33 @@ const EstudiantePAESRendir = () => {
             </Card>
           )}
 
-          <div className="mt-6 flex flex-wrap gap-3">
+          {/* Revisión pregunta por pregunta (solo interactivo) */}
+          {interactivo && (
+            <div className="mt-8">
+              <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+                <ListChecks className="h-5 w-5 text-primary" />
+                Revisión pregunta por pregunta
+              </h2>
+              <div className="space-y-4">
+                {preguntas.map((p, idx, arr) => {
+                  const showCtx = p.contexto && p.contexto !== arr[idx - 1]?.contexto;
+                  return (
+                    <React.Fragment key={p.id}>
+                      {showCtx && (
+                        <ContextoBlock
+                          texto={p.contexto}
+                          label={`Texto ${textosOrden.indexOf(p.contexto) + 1}`}
+                        />
+                      )}
+                      <RevisionPregunta p={p} idx={idx} mine={studentAns[idx]} />
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild variant="outline">
               <Link to="/dashboard/estudiante">
                 <Sparkles className="mr-2 h-4 w-4" />
@@ -403,11 +486,56 @@ const EstudiantePAESRendir = () => {
               )}
 
               <div className="mt-6">
-                <PdfPanel
-                  url={simulacro?.pdf_url}
-                  titulo={simulacro?.titulo}
-                  className="h-[60vh]"
-                />
+                {interactivo ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <GraduationCap className="h-5 w-5 text-primary" />
+                        Cómo funciona
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4 text-sm text-muted-foreground">
+                      <ul className="space-y-2.5">
+                        <li className="flex gap-2.5">
+                          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+                          Responde cada pregunta <strong className="text-foreground">en pantalla</strong>{' '}
+                          seleccionando una alternativa.
+                        </li>
+                        <li className="flex gap-2.5">
+                          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+                          El cronómetro parte al presionar <strong className="text-foreground">Comenzar</strong>;
+                          al llegar a cero se entrega solo.
+                        </li>
+                        <li className="flex gap-2.5">
+                          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+                          Al terminar verás tu <strong className="text-foreground">puntaje</strong> y la{' '}
+                          <strong className="text-foreground">explicación</strong> de cada pregunta.
+                        </li>
+                      </ul>
+
+                      {ejes.length > 0 && (
+                        <div className="rounded-lg border bg-muted/30 p-3">
+                          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground">
+                            Contenidos
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {ejes.map((e) => (
+                              <Badge key={e} variant="outline" className="font-normal">
+                                {e}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <PdfPanel
+                    url={simulacro?.pdf_url}
+                    titulo={simulacro?.titulo}
+                    className="h-[60vh]"
+                  />
+                )}
               </div>
             </div>
 
@@ -419,7 +547,7 @@ const EstudiantePAESRendir = () => {
                 <CardContent className="space-y-4 text-sm">
                   <ul className="space-y-3">
                     <InfoRow icon={ListChecks} label="Preguntas">
-                      <span className="font-mono tabular-nums">{nPreguntas}</span> alternativas
+                      <span className="font-mono tabular-nums">{nPreguntas}</span>
                     </InfoRow>
                     <InfoRow icon={Clock} label="Tiempo">
                       {simulacro?.duracion_min ? (
@@ -434,11 +562,20 @@ const EstudiantePAESRendir = () => {
                   </ul>
 
                   <div className="rounded-lg bg-muted/50 p-3 text-xs leading-relaxed text-muted-foreground">
-                    Lee los enunciados en el PDF y marca tu alternativa (A–E) en la hoja de
-                    respuestas. El cronómetro empieza al presionar <strong>Comenzar</strong> y al
-                    llegar a cero se entrega automáticamente. Al terminar verás tu resultado; si el
-                    clavijero oficial aún no está cargado, tu intento queda guardado y se corrige
-                    apenas se publique.
+                    {interactivo ? (
+                      <>
+                        Selecciona una alternativa por pregunta. El cronómetro empieza al presionar{' '}
+                        <strong>Comenzar</strong> y al llegar a cero se entrega automáticamente. Al
+                        terminar verás tu puntaje y la explicación de cada respuesta. No podrás volver
+                        a rendir este simulacro.
+                      </>
+                    ) : (
+                      <>
+                        Lee los enunciados en el PDF y marca tu alternativa (A–E) en la hoja de
+                        respuestas. El cronómetro empieza al presionar <strong>Comenzar</strong> y al
+                        llegar a cero se entrega automáticamente.
+                      </>
+                    )}
                   </div>
 
                   <Button className="w-full" size="lg" onClick={handleStart}>
@@ -530,57 +667,254 @@ const EstudiantePAESRendir = () => {
         </div>
       </div>
 
-      <div className="container mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* PDF */}
-          <PdfPanel
-            url={simulacro?.pdf_url}
-            titulo={simulacro?.titulo}
-            className="lg:sticky lg:top-32 lg:h-[calc(100vh-9rem)]"
-          />
+      {interactivo ? (
+        // -------- Modo interactivo: preguntas en pantalla -------------------
+        <div className="container mx-auto max-w-3xl px-4 py-6 sm:px-6 lg:px-8">
+          <div className="space-y-4">
+            {preguntas.map((p, idx, arr) => {
+              const showCtx = p.contexto && p.contexto !== arr[idx - 1]?.contexto;
+              return (
+                <React.Fragment key={p.id}>
+                  {showCtx && (
+                    <ContextoBlock
+                      texto={p.contexto}
+                      label={`Texto ${textosOrden.indexOf(p.contexto) + 1}`}
+                    />
+                  )}
+                  <PreguntaInteractiva
+                    p={p}
+                    idx={idx}
+                    value={answers[idx] || ''}
+                    onChange={(v) => setAnswer(idx, v)}
+                  />
+                </React.Fragment>
+              );
+            })}
+          </div>
 
-          {/* Hoja de respuestas */}
-          <div>
-            <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold">
-              <ListChecks className="h-5 w-5 text-primary" />
-              Hoja de respuestas
-            </h2>
-            <Card>
-              <CardContent className="grid grid-cols-1 gap-1 p-3 sm:grid-cols-2">
-                {answers.map((value, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-2 rounded-lg px-2 py-1.5 odd:bg-muted/30"
-                  >
-                    <span className="w-7 shrink-0 text-right font-mono text-sm tabular-nums text-muted-foreground">
-                      {idx + 1}
-                    </span>
-                    <ToggleGroup
-                      type="single"
-                      value={value}
-                      onValueChange={(v) => setAnswer(idx, v)}
-                      className="justify-start gap-1"
-                      aria-label={`Pregunta ${idx + 1}`}
-                    >
-                      {LETTERS.map((l) => (
-                        <ToggleGroupItem
-                          key={l}
-                          value={l}
-                          aria-label={`Pregunta ${idx + 1}, alternativa ${l}`}
-                          className="h-8 w-8 rounded-full border data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-                        >
-                          {l}
-                        </ToggleGroupItem>
-                      ))}
-                    </ToggleGroup>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+          <div className="mt-6 flex justify-end">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="lg" disabled={submitting}>
+                  {submitting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="mr-2 h-4 w-4" />
+                  )}
+                  Entregar y ver mi puntaje
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Entregar tus respuestas?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Respondiste {answeredCount} de {nPreguntas} preguntas
+                    {answeredCount < nPreguntas && (
+                      <> — quedan {nPreguntas - answeredCount} sin marcar</>
+                    )}
+                    . No podrás volver a rendir este simulacro una vez entregado.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Seguir respondiendo</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => handleSubmit(false)}>
+                    Entregar ahora
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
-      </div>
+      ) : (
+        // -------- Modo PDF (simulacros oficiales archivados) ----------------
+        <div className="container mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+          <div className="grid gap-6 lg:grid-cols-2">
+            <PdfPanel
+              url={simulacro?.pdf_url}
+              titulo={simulacro?.titulo}
+              className="lg:sticky lg:top-32 lg:h-[calc(100vh-9rem)]"
+            />
+
+            <div>
+              <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold">
+                <ListChecks className="h-5 w-5 text-primary" />
+                Hoja de respuestas
+              </h2>
+              <Card>
+                <CardContent className="grid grid-cols-1 gap-1 p-3 sm:grid-cols-2">
+                  {answers.map((value, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-2 rounded-lg px-2 py-1.5 odd:bg-muted/30"
+                    >
+                      <span className="w-7 shrink-0 text-right font-mono text-sm tabular-nums text-muted-foreground">
+                        {idx + 1}
+                      </span>
+                      <ToggleGroup
+                        type="single"
+                        value={value}
+                        onValueChange={(v) => setAnswer(idx, v)}
+                        className="justify-start gap-1"
+                        aria-label={`Pregunta ${idx + 1}`}
+                      >
+                        {LETTERS.map((l) => (
+                          <ToggleGroupItem
+                            key={l}
+                            value={l}
+                            aria-label={`Pregunta ${idx + 1}, alternativa ${l}`}
+                            className="h-8 w-8 rounded-full border data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                          >
+                            {l}
+                          </ToggleGroupItem>
+                        ))}
+                      </ToggleGroup>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      )}
     </>
+  );
+};
+
+// Pregunta interactiva (modo "taking"): enunciado + alternativas seleccionables.
+const PreguntaInteractiva = ({ p, idx, value, onChange }) => {
+  const alts = Array.isArray(p.alternativas_json) ? p.alternativas_json : [];
+  return (
+    <Card id={`pregunta-${idx + 1}`}>
+      <CardContent className="p-4 sm:p-5">
+        <div className="mb-3 flex items-start gap-3">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 font-mono text-sm font-bold text-primary">
+            {idx + 1}
+          </span>
+          <div className="min-w-0 flex-1">
+            {p.eje && (
+              <Badge variant="outline" className="mb-1.5 font-normal text-xs">
+                {p.eje}
+              </Badge>
+            )}
+            <p className="whitespace-pre-line font-medium leading-relaxed">{p.enunciado}</p>
+          </div>
+        </div>
+
+        <ToggleGroup
+          type="single"
+          value={value}
+          onValueChange={onChange}
+          className="flex flex-col items-stretch gap-2"
+          aria-label={`Pregunta ${idx + 1}`}
+        >
+          {alts.map((alt) => (
+            <ToggleGroupItem
+              key={alt.letra}
+              value={alt.letra}
+              aria-label={`Alternativa ${alt.letra}`}
+              className="h-auto justify-start gap-3 whitespace-normal rounded-lg border px-3 py-2.5 text-left font-normal data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-foreground"
+            >
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold">
+                {alt.letra}
+              </span>
+              <span className="text-sm leading-snug">{alt.texto}</span>
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Pregunta en modo revisión (post-entrega): marca la correcta y la del alumno.
+const RevisionPregunta = ({ p, idx, mine }) => {
+  const alts = Array.isArray(p.alternativas_json) ? p.alternativas_json : [];
+  const correct = p.respuesta_correcta;
+  const answered = !!mine;
+  const isCorrect = mine === correct;
+
+  return (
+    <Card className={isCorrect ? 'border-success/40' : answered ? 'border-destructive/40' : ''}>
+      <CardContent className="p-4 sm:p-5">
+        <div className="mb-3 flex items-start gap-3">
+          <span
+            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-mono text-sm font-bold ${
+              isCorrect
+                ? 'bg-success/15 text-success'
+                : answered
+                  ? 'bg-destructive/15 text-destructive'
+                  : 'bg-muted text-muted-foreground'
+            }`}
+          >
+            {idx + 1}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="mb-1.5 flex flex-wrap items-center gap-2">
+              {p.eje && (
+                <Badge variant="outline" className="font-normal text-xs">
+                  {p.eje}
+                </Badge>
+              )}
+              {isCorrect ? (
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-success">
+                  <CheckCircle2 className="h-3.5 w-3.5" /> Correcta
+                </span>
+              ) : answered ? (
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-destructive">
+                  <XCircle className="h-3.5 w-3.5" /> Incorrecta
+                </span>
+              ) : (
+                <span className="text-xs font-semibold text-muted-foreground">Sin responder</span>
+              )}
+            </div>
+            <p className="whitespace-pre-line font-medium leading-relaxed">{p.enunciado}</p>
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          {alts.map((alt) => {
+            const esCorrecta = alt.letra === correct;
+            const esTuya = alt.letra === mine;
+            return (
+              <div
+                key={alt.letra}
+                className={`flex items-start gap-3 rounded-lg border px-3 py-2 text-sm ${
+                  esCorrecta
+                    ? 'border-success/50 bg-success/10'
+                    : esTuya
+                      ? 'border-destructive/50 bg-destructive/10'
+                      : 'border-transparent'
+                }`}
+              >
+                <span
+                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold ${
+                    esCorrecta
+                      ? 'border-success/50 text-success'
+                      : esTuya
+                        ? 'border-destructive/50 text-destructive'
+                        : 'text-muted-foreground'
+                  }`}
+                >
+                  {alt.letra}
+                </span>
+                <span className="flex-1 leading-snug">{alt.texto}</span>
+                {esCorrecta && <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />}
+                {esTuya && !esCorrecta && (
+                  <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {p.explicacion && (
+          <div className="mt-3 rounded-lg bg-muted/50 p-3 text-sm leading-relaxed text-muted-foreground">
+            <span className="font-semibold text-foreground">Explicación: </span>
+            {p.explicacion}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

@@ -152,6 +152,12 @@ const EstudiantePAES = ({ pupiloId }) => {
                           <span className="font-mono tabular-nums">{s.duracion_min}</span> min
                         </span>
                       )}
+                      {s.modo === 'interactivo' && (
+                        <span className="flex items-center gap-1 font-medium text-primary">
+                          <Sparkles className="h-3.5 w-3.5" />
+                          Interactivo
+                        </span>
+                      )}
                     </div>
                     {yaRendido ? (
                       <Button variant="outline" size="sm" className="w-full" asChild>

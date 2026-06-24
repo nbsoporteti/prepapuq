@@ -2,33 +2,46 @@
 
 Lista priorizada de cosas por hacer. Marcá con `[x]` al completar.
 
-## Fase 2 — operación (cursos + PAES + biblioteca + pizarra)
+## Fase 2 — operación (cursos + PAES interactiva + biblioteca + pizarra)
 
-Lo construido en la sesión 2026-06-24 (Fase 2) necesita dos pasos manuales para
-quedar 100% activo en producción. Detalle del cambio en
+Lo construido en la sesión 2026-06-24 (Fase 2 + Fase 2.1) necesita un redeploy
+del backend para quedar activo. Detalle del cambio en
 [`05-cambios-recientes.md`](05-cambios-recientes.md).
 
-- [ ] **Redeploy del backend PocketBase** para correr las 5 migraciones nuevas
-  (`1781100100`–`1781100140`: cursos de Ciencias, lecciones, asignación de la
-  alumna demo, extensión de `simulacros_paes` + `resultados_simulacro_paes`, y
-  seed de los 8 simulacros). Hasta el redeploy, los cursos y simulacros **no
-  existen** en la DB. Tras correr, verificar en el admin PB que aparecen los 3
-  cursos `materia="ciencias"` y los 8 `simulacros_paes` en estado `publicado`.
+- [ ] **Redeploy del backend PocketBase** para correr las **7 migraciones nuevas**
+  (`1781100100`–`1781100160`):
+  - `…100`–`…120`: cursos de Ciencias, lecciones y asignación de la alumna demo.
+  - `…130`–`…140`: extensión de `simulacros_paes` + `resultados_simulacro_paes` y
+    seed de los 8 simulacros-PDF originales.
+  - `…150`–`…160` (**Fase 2.1, PAES interactiva**): campo `modo`, **archiva los 8
+    simulacros-PDF**, crea `preguntas_paes` y siembra los **7 mini-ensayos
+    interactivos** con 70 preguntas originales.
 
-- [ ] **Cargar la clave DEMRE por simulacro** (`clave_respuestas_json`) desde el
-  panel admin, cuando DEMRE publique el clavijero oficial de cada ensayo. Formato:
-  array de `"A"`..`"E"` (o `null` en las posiciones de preguntas piloto, que no
-  puntúan). Sin clave, el simulacro corre en **modo práctica**: el alumno marca y
-  su intento se registra, pero sin puntaje. Al guardar la clave, el hook
-  `simulacros_paes.pb.js` **re-corrige automáticamente** todos los intentos ya
-  rendidos de ese simulacro.
-  > ⚠️ **No transcribir los enunciados** de los PDFs DEMRE al sistema (su licencia
-  > prohíbe reproducir las preguntas para entrenar IA). Solo se carga el clavijero.
+  Hasta el redeploy, los cursos y simulacros **no existen** en la DB. Tras correr,
+  verificar en el admin PB: 3 cursos `materia="ciencias"`, 7 `simulacros_paes` con
+  `modo="interactivo"` / `estado="publicado"` (los 8 PDF quedan `archivado`) y 70
+  filas en `preguntas_paes`.
+
+- [ ] **Revisión pedagógica del banco de preguntas (recomendado).** Que un profe
+  revise las **70 preguntas originales** de PrePa (enunciados, alternativas, clave
+  correcta y explicaciones) antes de abrirlas a estudiantes reales. Editables desde
+  el panel admin (`preguntas_paes`) o con una migración nueva.
 
 - [ ] **Revisar la `tabla_conversion_json` de cada simulacro.** Hoy es
-  **referencial** (curva 100–1000 aproximada por nº de preguntas), no la tabla
-  oficial DEMRE de ese ensayo. Si se quiere un puntaje fiel, reemplazarla por la
-  tabla real cuando exista (editando el registro, o con una migración nueva).
+  **referencial** (curva 100–1000 aproximada por nº de preguntas), no una tabla
+  oficial DEMRE. Si se quiere un puntaje más fiel, reemplazarla editando el
+  registro o con una migración nueva.
+
+- [ ] **(Futuro) Ampliar los mini-ensayos a largo PAES real.** Cada simulacro
+  interactivo tiene hoy 10 preguntas (mini-ensayo de práctica). Para un ensayo
+  completo, agregar más `preguntas_paes` (y el seed deriva la clave solo). Mantener
+  todo como **contenido original**, nunca transcripciones DEMRE.
+
+> ℹ️ La vieja tarea "cargar la clave DEMRE por simulacro" quedó **obsoleta** para
+> el flujo interactivo: cada mini-ensayo trae su propia clave (derivada de sus
+> preguntas), así que puntúa solo apenas el alumno entrega. El camino de
+> clave-DEMRE solo aplicaría si se reactivara algún simulacro-PDF archivado — y aun
+> así **nunca se transcriben los enunciados** (la licencia DEMRE lo prohíbe).
 
 - [ ] **Code-splitting del bundle web** — el `index.js` superó los 500 KB
   (warning de Rollup en el build). No bloquea, pero conviene `React.lazy` por ruta

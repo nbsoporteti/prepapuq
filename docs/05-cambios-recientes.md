@@ -5,6 +5,85 @@ de Horizons con bugs" a "listo para deploy en VPS propio").
 
 ---
 
+## 2026-06-24 — Fase 2.1: PAES interactiva (preguntas dentro del sistema)
+
+**Pivote de diseño.** La PAES de la Fase 2 era una *hoja de respuestas*: el
+alumno leía el PDF del ensayo aparte y solo marcaba A–E. Se descartó. Ahora las
+preguntas viven **dentro del sistema**: el alumno ve el enunciado y las
+alternativas en pantalla, **selecciona una respuesta por pregunta** y al entregar
+**el sistema calcula el puntaje automáticamente**. (Reemplaza a la sección
+"2. PAES integrada y rendible" de la Fase 2, que queda como historial.)
+
+> ⚖️ **Legal:** el contenido interactivo son **preguntas ORIGINALES de PrePa**
+> (mismo estilo/ejes PAES), **no** transcripciones de los ensayos oficiales DEMRE
+> — esos PDFs prohíben expresamente reproducir sus preguntas (incluso para
+> entrenar IA). Los 8 PDFs oficiales siguen disponibles **solo como descarga** en
+> la Biblioteca.
+
+### 1. Backend — colección nueva + modo, sin tocar el hook de scoring
+
+- **Migración `1781100150_create_preguntas_paes.js`**
+  - Agrega el campo `modo` (`"pdf" | "interactivo"`) a `simulacros_paes`.
+  - **Archiva los 8 simulacros-PDF** existentes (`modo="pdf"`, `estado="archivado"`):
+    salen de la lista de "Simulacros para rendir" pero siguen como descarga en la
+    Biblioteca (lista estática del front, no depende de la colección).
+  - Crea la colección **`preguntas_paes`**: `simulacro_id` (relación cascade),
+    `numero` (único por simulacro), `eje`, `contexto` (texto base compartido,
+    opcional — para Comp. Lectora), `enunciado`, `alternativas_json`
+    (`[{letra,texto}]`), `respuesta_correcta` (A–E) y `explicacion`. Lectura para
+    cualquier autenticado; escritura solo `profesor`/`admin`. Índice único
+    `(simulacro_id, numero)`.
+- **Migración `1781100160_seed_preguntas_paes.js`** — siembra **7 mini-ensayos
+  interactivos** (Biología, Física, Química, Competencia Lectora, Matemática M1,
+  Matemática M2, Historia y Cs. Sociales) con **70 preguntas originales** en total
+  (10 c/u), incluidas **2 lecturas originales** para Comp. Lectora. Cada pregunta
+  trae su alternativa correcta y una **explicación**. Idempotente: hace *upsert*
+  del simulacro por título y recrea sus preguntas, sin pisar intentos ya rendidos.
+- **Scoring reutilizado sin cambios.** El truco: el seed deriva el
+  `clave_respuestas_json` de cada simulacro desde las respuestas correctas de sus
+  preguntas (en orden de `numero`). Así el hook `simulacros_paes.pb.js` ya
+  existente puntúa el modo interactivo **sin una sola línea nueva**: compara
+  índice-a-índice las respuestas del alumno contra la clave, interpola el puntaje
+  con la `tabla_conversion_json` y recalcula el percentil. El cálculo sigue siendo
+  100% server-side (el cliente nunca manda el puntaje).
+
+### 2. Frontend — rendir preguntas en pantalla + revisión
+
+- **`EstudiantePAESRendir.jsx` reescrita** — detecta el modo: si el simulacro
+  tiene preguntas en `preguntas_paes`, entra en **modo interactivo**:
+  - **Intro** "Cómo funciona" + badges de contenidos (ejes).
+  - **Rindiendo**: columna de tarjetas, cada una con enunciado y alternativas en un
+    `ToggleGroup` vertical (círculo con la letra + texto), una selección por
+    pregunta; las lecturas de Comp. Lectora se muestran en un bloque de contexto
+    ("Texto 1/2") antes de sus preguntas. Cronómetro y barra de progreso como antes.
+  - **Hecho**: muestra **puntaje / correctas / percentil** y una **revisión
+    pregunta por pregunta** que marca en verde la correcta, en rojo la elección
+    equivocada del alumno y despliega la **explicación**.
+  - El submit sigue enviando solo `respuestas_alumno_json` + tiempo (nunca el
+    puntaje). El modo PDF clásico se conserva para registros archivados.
+- **`EstudiantePAES.jsx`** — badge **"Interactivo"** (✨) en las tarjetas de
+  simulacro con `modo="interactivo"`. La lista de "rendir" ahora muestra los 7
+  interactivos (los 8 PDF quedaron archivados).
+
+### Verificación
+
+| Check          | Resultado                                                          |
+| -------------- | ------------------------------------------------------------------ |
+| `npm run lint` | ✓ Sin errores                                                      |
+| `vite build`   | ✓ 13.4 s — `index.js` 1.155 MB (gz 339 KB) + CSS 147 KB            |
+
+### ⚠️ Operación: un paso manual
+
+- **Redeploy del backend** para correr las migraciones `1781100150` y `1781100160`.
+  Crean `preguntas_paes`, archivan los 8 simulacros-PDF y siembran los 7
+  interactivos. Hasta el redeploy, los simulacros interactivos **no existen** en la
+  DB. Tras correr, verificar en el admin PB que hay 7 `simulacros_paes` con
+  `modo="interactivo"` / `estado="publicado"` y que `preguntas_paes` tiene 70 filas.
+- **Revisión de contenido (recomendado):** que un profe revise las 70 preguntas y
+  sus claves/explicaciones antes de abrirlas a estudiantes reales.
+
+---
+
 ## 2026-06-24 — Fase 2: cursos de Ciencias, PAES interactivo, biblioteca y pizarra
 
 Sesión de contenido + interactividad. Se construyeron los 3 cursos de Ciencias
@@ -37,6 +116,11 @@ un hook de scoring server-side.
   del syllabus (h2/h3/p/ul/ol/strong/a), bajo `@layer components`.
 
 ### 2. PAES integrada y rendible (hoja de respuestas + cronómetro + resultados)
+
+> 🔁 **Reemplazado por la Fase 2.1** (ver arriba). Este diseño de *hoja de
+> respuestas* se descartó: ahora las preguntas se rinden dentro del sistema. Lo de
+> abajo queda como historial. El hook de scoring y la extensión de
+> `simulacros_paes` / `resultados_simulacro_paes` **se siguen usando** tal cual.
 
 Diseño **anti-trampa por hoja de respuestas**: por la cláusula DEMRE de "no
 reproducir las preguntas para entrenar IA", **no se transcribe ningún enunciado**.
