@@ -27,6 +27,23 @@ de Hostinger Horizons del frontend y se agregó el branding propio.
 
 > Nota: el script `npm run build` usa `node tools/generate-llms.js || true && vite build`. En Windows `cmd.exe` no tiene `true`, así que si `generate-llms.js` falla, el build local se salta en silencio. En Docker/Linux (producción) funciona bien.
 
+### Seeds demo para los 3 roles faltantes (profesor / administrativo / admin)
+
+Solo había seeds de `estudiante` (camila) y `apoderado` (marta). Se agregaron
+tres migraciones append-only (timestamps > `1781000020`) con un usuario demo por
+rol restante:
+
+- `1781100000_001_create_user_profesor_…` → `profesor@example.com` / `Profesor123!`
+- `1781100001_001_create_user_secretaria_…` → `secretaria@example.com` / `Secretaria123!` (rol `administrativo`)
+- `1781100002_001_create_user_admin_…` → `admin@example.com` / `Admin123!` (admin de la app)
+
+Detalle clave: el `rol` legacy es required y no admite `profesor`/`administrativo`,
+así que esos dos van con `roles: ["profesor"|"administrativo"]` y un `rol`
+placeholder `estudiante` (el front usa `roles`; las reglas de las colecciones
+nuevas también). Tabla completa de credenciales en
+[`02-modelo-datos.md`](02-modelo-datos.md#seeds-disponibles). Corren solas en el
+próximo arranque de PocketBase (requiere **redeploy del back**).
+
 
 
 ## Estado al iniciar la sesión

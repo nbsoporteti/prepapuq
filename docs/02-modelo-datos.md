@@ -269,11 +269,36 @@ Esto permite expresar joins server-side sin escribir SQL custom.
 
 ## Seeds disponibles
 
-Hay migraciones seed que crean usuarios de ejemplo:
-- `1776144690_001_create_user_marta_at_example_com.js`
-- `1776144691_001_create_user_camila_at_example_com.js`
-- `1776063676_002_seed_parent_student_1_records.js`
-- `1776144699_002_seed_parent_student_1_records.js`
-- `1776144701_002_seed_asistencia_1_records.js`
+Hay migraciones seed que crean usuarios de ejemplo. Ejecutan solo si los
+registros no existen (idempotentes, guard por `Value must be unique`).
 
-Revisalas si necesitás datos de prueba; ejecutan solo si los registros no existen.
+### Credenciales demo (uno por rol)
+
+| Rol            | Email                     | Password         | Migración                                              |
+| -------------- | ------------------------- | ---------------- | ------------------------------------------------------ |
+| estudiante     | `camila@example.com`      | `Camila123!`     | `1776144691_001_create_user_camila_…`                  |
+| apoderado      | `marta@example.com`       | `Marta123!`      | `1776144690_001_create_user_marta_…`                   |
+| profesor       | `profesor@example.com`    | `Profesor123!`   | `1781100000_001_create_user_profesor_…`                |
+| administrativo | `secretaria@example.com`  | `Secretaria123!` | `1781100001_001_create_user_secretaria_…`              |
+| admin (app)    | `admin@example.com`       | `Admin123!`      | `1781100002_001_create_user_admin_…`                   |
+
+> ⚠️ **Passwords débiles y versionados en el repo.** Son solo para testear.
+> Cambialos o borrá estos usuarios **antes** de que entren alumnos reales.
+>
+> El **admin de la app** (tabla de arriba, logea en la web → `/dashboard/admin`)
+> es distinto del **superuser de PocketBase** (colección `_superusers`, panel
+> `/_/`), cuyas credenciales salen de las env vars `PB_SUPERUSER_EMAIL` /
+> `PB_SUPERUSER_PASSWORD`.
+
+**Sobre `rol` vs `roles` en los seeds de staff:** el campo legacy `rol`
+(required) solo admite `estudiante|apoderado|admin`. Para `profesor` y
+`administrativo` el rol real va en el multi-select `roles` (que es lo que leen
+`computeRolesEffective` en el front y las reglas `@request.auth.roles ~ '…'` de
+las colecciones nuevas); el `rol` queda en un placeholder `estudiante` de mínimo
+privilegio que el front ignora cuando `roles` no está vacío.
+
+### Otros seeds (vínculos y datos de prueba)
+
+- `1776063676_002_seed_parent_student_1_records.js`
+- `1776144699_002_seed_parent_student_1_records.js` — vincula marta ↔ camila
+- `1776144701_002_seed_asistencia_1_records.js`
