@@ -1,0 +1,26 @@
+{
+  "actualizado": "2025-01-15",
+  "fuente": "DEMRE / sitios oficiales de cada universidad - corte ultima vacante via PSU/PAES 2024",
+  "carreras": [
+    { "carrera": "Medicina", "universidad": "Universidad de Chile", "corte": 819, "ponderacion": "lectora 25, M1 25, M2 15, ciencias 35" },
+    { "carrera": "Medicina", "universidad": "Pontificia Universidad Católica", "corte": 812, "ponderacion": "lectora 30, M1 25, ciencias 35" },
+    { "carrera": "Medicina", "universidad": "Universidad de Concepción", "corte": 780, "ponderacion": "lectora 25, M1 25, ciencias 30" },
+    { "carrera": "Ingeniería Comercial", "universidad": "Universidad de Chile", "corte": 770, "ponderacion": "lectora 25, M1 35, M2 10, historia 20" },
+    { "carrera": "Ingeniería Comercial", "universidad": "Pontificia Universidad Católica", "corte": 768, "ponderacion": "lectora 25, M1 35, historia 20" },
+    { "carrera": "Ingeniería Civil", "universidad": "Universidad de Chile", "corte": 760, "ponderacion": "lectora 20, M1 30, M2 25, ciencias 15" },
+    { "carrera": "Ingeniería Civil", "universidad": "Pontificia Universidad Católica", "corte": 755, "ponderacion": "lectora 20, M1 30, M2 25, ciencias 15" },
+    { "carrera": "Odontología", "universidad": "Universidad de Chile", "corte": 745, "ponderacion": "lectora 25, M1 25, ciencias 30" },
+    { "carrera": "Derecho", "universidad": "Universidad de Chile", "corte": 740, "ponderacion": "lectora 35, M1 15, historia 30" },
+    { "carrera": "Derecho", "universidad": "Pontificia Universidad Católica", "corte": 735, "ponderacion": "lectora 35, M1 15, historia 30" },
+    { "carrera": "Psicología", "universidad": "Universidad de Chile", "corte": 720, "ponderacion": "lectora 30, M1 20, ciencias 25" },
+    { "carrera": "Arquitectura", "universidad": "Universidad de Chile", "corte": 700, "ponderacion": "lectora 25, M1 25, ciencias 20" },
+    { "carrera": "Kinesiología", "universidad": "Universidad de Chile", "corte": 695, "ponderacion": "lectora 25, M1 20, ciencias 30" },
+    { "carrera": "Veterinaria", "universidad": "Universidad de Chile", "corte": 680, "ponderacion": "lectora 20, M1 25, ciencias 35" },
+    { "carrera": "Enfermería", "universidad": "Universidad de Chile", "corte": 670, "ponderacion": "lectora 25, M1 20, ciencias 30" },
+    { "carrera": "Ingeniería en Minas", "universidad": "Universidad de Chile", "corte": 690, "ponderacion": "lectora 20, M1 30, M2 25, ciencias 15" },
+    { "carrera": "Pedagogía Básica", "universidad": "Universidad de Magallanes", "corte": 530, "ponderacion": "lectora 30, M1 25, historia 15" },
+    { "carrera": "Ingeniería Comercial", "universidad": "Universidad de Magallanes", "corte": 580, "ponderacion": "lectora 25, M1 35, historia 15" },
+    { "carrera": "Medicina Veterinaria", "universidad": "Universidad de Magallanes", "corte": 640, "ponderacion": "lectora 20, M1 25, ciencias 30" },
+    { "carrera": "Enfermería", "universidad": "Universidad de Magallanes", "corte": 600, "ponderacion": "lectora 25, M1 20, ciencias 30" }
+  ]
+}

@@ -14,6 +14,10 @@ import ApoderadoDashboard from './pages/ApoderadoDashboard.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
 import ProfesorDashboard from './pages/profesor/ProfesorDashboard.jsx';
 import SeccionDetalle from './pages/profesor/SeccionDetalle.jsx';
+import ProfesorCalificarTareaPage from './pages/profesor/ProfesorCalificarTareaPage.jsx';
+import CalificarEvaluacionBulk from './pages/profesor/CalificarEvaluacionBulk.jsx';
+import EstudianteTareasPage from './pages/estudiante/EstudianteTareasPage.jsx';
+import EstudianteTareaDetailPage from './pages/estudiante/EstudianteTareaDetailPage.jsx';
 import AdministrativoDashboard from './pages/administrativo/AdministrativoDashboard.jsx';
 import ProtectedRoute from '@/components/ProtectedRoute.jsx';
 import { AuthProvider } from '@/contexts/AuthContext.jsx';
@@ -84,6 +88,42 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={["profesor", "admin"]}>
                     <SeccionDetalle />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/dashboard/profesor/calificar/:entregaId"
+                element={
+                  <ProtectedRoute allowedRoles={["profesor", "admin"]}>
+                    <ProfesorCalificarTareaPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/dashboard/profesor/evaluacion/:evaluacionId"
+                element={
+                  <ProtectedRoute allowedRoles={["profesor", "admin"]}>
+                    <CalificarEvaluacionBulk />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/dashboard/estudiante/tareas"
+                element={
+                  <ProtectedRoute allowedRole="estudiante">
+                    <EstudianteTareasPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/dashboard/estudiante/tarea/:tareaId"
+                element={
+                  <ProtectedRoute allowedRole="estudiante">
+                    <EstudianteTareaDetailPage />
                   </ProtectedRoute>
                 }
               />
