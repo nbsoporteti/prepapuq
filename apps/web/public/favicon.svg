@@ -1,0 +1,10 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PrePa">
+  <rect width="64" height="64" rx="14" fill="#0EA5E9"/>
+  <!-- birrete (mortarboard) -->
+  <path d="M32 17 L56 26 L32 35 L8 26 Z" fill="#ffffff"/>
+  <!-- base del birrete -->
+  <path d="M19 30.5 L19 39 C19 42.3 24.8 44.5 32 44.5 C39.2 44.5 45 42.3 45 39 L45 30.5 L32 35.5 Z" fill="#ffffff" fill-opacity="0.9"/>
+  <!-- borla en verde PrePa -->
+  <path d="M56 26 L56 41" fill="none" stroke="#22C55E" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="56" cy="44" r="3.2" fill="#22C55E"/>
+</svg>

@@ -3,6 +3,32 @@
 Bitácora de la sesión de finalización del proyecto (de "scaffolding sucio
 de Horizons con bugs" a "listo para deploy en VPS propio").
 
+---
+
+## 2026-06-24 — Limpieza final de Horizons + branding PrePa
+
+Ya en producción (prepapuq.cl con cert Let's Encrypt), se sacó **todo** rastro
+de Hostinger Horizons del frontend y se agregó el branding propio.
+
+**Removido (Horizons):**
+
+- `index.html` — `<meta generator="Hostinger Horizons">`, `<title>Hostinger Horizons</title>`, favicon `/vite.svg`, `lang="en"`.
+- `vite.config.js` — el plugin `addTransformIndexHtml` que **inyectaba 5 scripts en el build de producción** (`window.parent.postMessage` de errores runtime/consola/vite-overlay/navegación + monkey-patch de `window.fetch`). También: los 5 plugins del editor visual (`visual-editor/*`, `selection-mode/*`, `iframe-route-restoration`, `pocketbase-auth`, solo dev), el `console.warn = () => {}` global, el `customLogger` que silenciaba `CssSyntaxError`, los `server.headers`/`allowedHosts` del iframe de preview y los `external` de babel. Quedó una config mínima (React + alias `@` + `fs.allow` del monorepo).
+- Carpeta `apps/web/plugins/` completa (9 archivos huérfanos tras quitar los imports).
+- `apps/web/public/.htaccess` — config de Apache (Hostinger) con header `X-Powered-By "Hostinger Horizons"`; muerto en el deploy nginx.
+- `pocketbaseClient.js` — fallback `/hcgi/platform` → `http://127.0.0.1:8090` (dev local). En prod la URL se hornea con `VITE_POCKETBASE_URL`.
+
+**Agregado (branding):**
+
+- `apps/web/public/favicon.svg` — birrete en los colores del logo (verde `#22C55E` + azul `#0EA5E9`), usado como favicon y en el `Header` (desktop + menú mobile).
+- `index.html` — `<title>` y `description` reales, `lang="es"`, `theme-color`, y meta **Open Graph** para previews al compartir por WhatsApp/redes (`og:image` → `/og-image.png`, falta subir ese PNG 1200×630).
+
+**Verificación:** `vite build` OK (2305 módulos, 9.6s); el `dist/index.html` quedó en 1.07 kB sin ningún script inyectado.
+
+> Nota: el script `npm run build` usa `node tools/generate-llms.js || true && vite build`. En Windows `cmd.exe` no tiene `true`, así que si `generate-llms.js` falla, el build local se salta en silencio. En Docker/Linux (producción) funciona bien.
+
+
+
 ## Estado al iniciar la sesión
 
 - Monorepo armado en Horizons (Hostinger AI).

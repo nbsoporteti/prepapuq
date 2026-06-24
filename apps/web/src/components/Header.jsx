@@ -89,12 +89,15 @@ const Header = () => {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          <Link 
+          <Link
             to="/"
-            className="flex flex-col items-start transition-opacity duration-200 hover:opacity-80"
+            className="flex items-center gap-2.5 transition-opacity duration-200 hover:opacity-80"
           >
-            <span className="text-2xl font-bold text-primary">PrePa</span>
-            <span className="text-xs text-muted-foreground hidden sm:block">Tu camino a la universidad</span>
+            <img src="/favicon.svg" alt="PrePa" className="h-9 w-9 shrink-0" />
+            <span className="flex flex-col items-start leading-none">
+              <span className="text-2xl font-bold text-primary">PrePa</span>
+              <span className="text-xs text-muted-foreground hidden sm:block mt-0.5">Tu camino a la universidad</span>
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -184,9 +187,12 @@ const Header = () => {
             </SheetTrigger>
             <SheetContent side="right" className="w-[280px]">
               <div className="flex flex-col gap-6 mt-8">
-                <div className="flex flex-col items-start mb-4">
-                  <span className="text-2xl font-bold text-primary">PrePa</span>
-                  <span className="text-xs text-muted-foreground">Tu camino a la universidad</span>
+                <div className="flex items-center gap-2.5 mb-4">
+                  <img src="/favicon.svg" alt="PrePa" className="h-9 w-9 shrink-0" />
+                  <div className="flex flex-col items-start leading-none">
+                    <span className="text-2xl font-bold text-primary">PrePa</span>
+                    <span className="text-xs text-muted-foreground mt-0.5">Tu camino a la universidad</span>
+                  </div>
                 </div>
                 
                 {renderNavLinks(true)}

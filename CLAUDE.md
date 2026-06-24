@@ -34,7 +34,7 @@ prepa/
 │   │   ├── src/lib/         pocketbaseClient (lee VITE_POCKETBASE_URL)
 │   │   ├── Dockerfile       multi-stage Node → nginx
 │   │   ├── nginx.conf       SPA fallback + cache de assets
-│   │   └── vite.config.js   Plugins de Horizons (solo en dev)
+│   │   └── vite.config.js   Config Vite limpia (React + alias @ + monorepo)
 │   └── pocketbase/
 │       ├── pb_migrations/   34 originales + 1 fix (1780617600_…)
 │       ├── pb_hooks/        builder-mailer, custom-migrations-cmd, external-dashboard
@@ -59,7 +59,7 @@ prepa/
 - **Vite SPA, no Next.js** — la app no necesita SSR/SSG. Vite es más simple para esto.
 - **PocketBase, no Postgres + API custom** — un solo binario con auth, files, hooks. Suficiente para esta escala.
 - **Reglas en migraciones JS** — append-only. **Nunca editar una migración existente** una vez aplicada; siempre agregar una nueva con el cambio.
-- **Cliente PB lee `VITE_POCKETBASE_URL` con fallback a `/hcgi/platform`** — el fallback existe sólo por compatibilidad con Horizons.
+- **Cliente PB lee `VITE_POCKETBASE_URL` con fallback a `http://127.0.0.1:8090`** — la URL pública se hornea en build; el fallback es solo para dev local. (Se eliminó el viejo fallback `/hcgi/platform` de Horizons junto con toda su tooling: ver `docs/05-cambios-recientes.md`.)
 - **Apoderado ve asistencia de pupilos vía join `parent_student`** — implementado en la migración `1780617600_…` con el operador `?=` de PocketBase.
 
 ## Comandos clave

@@ -1,11 +1,10 @@
 import Pocketbase from 'pocketbase';
 
-// In Horizons (Hostinger) the SPA and PocketBase are served from the same
-// origin behind a reverse-proxy mounted at /hcgi/platform. For a custom
-// deploy (e.g. Coolify on a VPS) set VITE_POCKETBASE_URL to the public URL
-// of the PocketBase instance, e.g. https://api.prepa.example.com
+// La URL del backend se inyecta en build con VITE_POCKETBASE_URL
+// (ej. https://api.prepapuq.cl). Si no está definida, cae al PocketBase
+// local de desarrollo en el puerto 8090.
 const POCKETBASE_API_URL =
-  import.meta.env.VITE_POCKETBASE_URL || '/hcgi/platform';
+  import.meta.env.VITE_POCKETBASE_URL || 'http://127.0.0.1:8090';
 
 const pocketbaseClient = new Pocketbase(POCKETBASE_API_URL);
 
