@@ -5,6 +5,82 @@ de Horizons con bugs" a "listo para deploy en VPS propio").
 
 ---
 
+## 2026-06-24 — Fase 2.3: panel de gestión de usuarios + robustez del admin
+
+El `AdminDashboard` pasó de 5 a **7 tabs**: se agregó **"Resumen"** (métricas) como
+landing y **"Usuarios"** (ABM completo de cuentas). Hasta ahora no había ninguna
+forma de crear o editar usuarios desde la app: se hacía a mano en el admin de
+PocketBase. Ahora el admin (que es un user normal `rol="admin"`, **no** un superuser
+de PB) puede gestionar cuentas de toda la plataforma.
+
+### 1. Backend — `1781100180_users_admin_management.js` (append-only)
+
+- **Reglas de `users`.** Hasta la `1780617600`, `users` solo tenía `listRule`/`viewRule`;
+  `create/update/deleteRule` quedaron en el default del sistema (solo el dueño/superuser),
+  así que un `rol="admin"` no podía crear ni editar a nadie. La migración abre:
+  - `createRule` / `deleteRule`: `adminOnly` (`@request.auth.roles ~ 'admin' || @request.auth.rol = 'admin'`).
+  - `updateRule`: `adminOnly || id = @request.auth.id` → preserva la edición de perfil
+    propio (`PerfilGeneral`). El hook `users_security.pb.js` sigue impidiendo que un
+    no-admin se cambie su propio `rol`/`roles`, así que abrir el update al dueño **no**
+    permite escalar privilegios.
+  - `manageRule`: `adminOnly`. En colecciones auth, este rule habilita a un user no-superuser
+    a fijar `verified`, **resetear la contraseña ajena sin la actual** y cambiar email sin
+    el flujo de confirmación. Sin él, el panel no podría crear cuentas verificadas ni
+    resetear contraseñas.
+- **Backfill** en los usuarios existentes (patrón `findAllRecords` + `saveNoValidate`,
+  igual que la `1780617702`):
+  - `emailVisibility=true`: el admin no es superuser y PB oculta el email de terceros salvo
+    ese flag → sin esto la lista saldría sin correos. La `listRule` ya restringe la lectura
+    a admin + dueño, así que no se expone a terceros.
+  - `activo=true`: el `BoolField activo` (Fase 0) no tenía default → todos quedaron en `false`.
+    El soft-disable trata `false` = deshabilitado, así que hay que activar a los actuales.
+
+### 2. Backend — hook nuevo `users_activo_login.pb.js`
+
+- `onRecordAuthRequest("users")`: corta el login (password/oauth/**authRefresh**) si el
+  usuario tiene `activo=false`. Soft-disable real: deshabilitás una cuenta y deja de entrar
+  sin perder su historial.
+- `onRecordCreateRequest("users")`: si la request no trae `activo`, lo defaultea a `true`
+  (evita autobloqueos por el zero-value del bool). Si lo manda explícito, se respeta.
+- **Red de seguridad anti-lockout:** los superusers de PB autentican contra `_superusers`,
+  no `users`, así que este gate nunca los afecta. Si por error se deshabilitara a todos los
+  admin, el superuser de PB siempre puede entrar y reactivarlos.
+
+### 3. Frontend — `components/admin/` (3 componentes nuevos)
+
+- **`UserFormSheet.jsx`** — Sheet crear/editar (react-hook-form + Zod + TanStack Query).
+  Campos: nombre, email, RUT, teléfono, **roles** (checkboxes multi), año que cursa (si es
+  estudiante), **activa** (switch) y contraseña (obligatoria al crear; opcional "resetear"
+  al editar). Deriva el `rol` legacy desde `roles[]` (`admin > apoderado > estudiante`,
+  con profesor/administrativo → `estudiante` como mínimo privilegio, igual que los seeds).
+  Setea `emailVisibility=true` y `verified=true` al crear.
+- **`UsuariosTab.jsx`** — lista con `DataTable` (búsqueda, sort, paginación), filtros por
+  **rol** y **estado**, badges de roles, avatar/inicial, y acciones inline: editar,
+  activar/desactivar (mutación) y eliminar (con `ConfirmDialog`). **Self-protection:** el
+  admin no puede desactivarse ni eliminarse a sí mismo.
+- **`AdminOverviewTab.jsx`** — 9 tarjetas de métricas (conteos vía `getList(1,1).totalItems`).
+  Cada conteo es **resiliente**: si la colección no existe (backend sin redeploy) cae a "—"
+  en vez de romper el panel.
+
+### 4. `AdminDashboard.jsx`
+
+- Imports de los 3 componentes; `defaultValue="resumen"`; `TabsList` a
+  `grid-cols-2 sm:grid-cols-4 lg:grid-cols-7`. Las 5 tabs previas quedan intactas.
+
+### Verificación
+
+| Check | Resultado |
+| --- | --- |
+| `eslint` (4 archivos) | ✅ sin errores |
+| `vite build` | ✅ exit 0, bundle 1.4 MB |
+| `manageRule` / `onRecordAuthRequest` / `onRecordCreateRequest` | ✅ confirmados en `types.d.ts` |
+
+> ⚠️ **Operación: redeploy** para correr la `1781100180` y cargar `users_activo_login.pb.js`.
+> Sin eso el panel no puede crear/editar usuarios (la API los rechaza) y la lista sale sin
+> emails. Ver [`06-pendientes.md`](06-pendientes.md).
+
+---
+
 ## 2026-06-24 — Fase 2.2: editor visual de ensayos + imágenes, LaTeX y campos nuevos
 
 La creación de ensayos pasó de **pegar texto** a un **editor visual por pregunta**,

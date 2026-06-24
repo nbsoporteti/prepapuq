@@ -4,12 +4,12 @@ Lista priorizada de cosas por hacer. Marcá con `[x]` al completar.
 
 ## Fase 2 — operación (cursos + PAES interactiva + biblioteca + pizarra)
 
-Lo construido en la sesión 2026-06-24 (Fase 2 + Fase 2.1 + Fase 2.2) necesita un
-redeploy del backend para quedar activo. Detalle del cambio en
+Lo construido en la sesión 2026-06-24 (Fase 2 + Fase 2.1 + Fase 2.2 + Fase 2.3)
+necesita un redeploy del backend para quedar activo. Detalle del cambio en
 [`05-cambios-recientes.md`](05-cambios-recientes.md).
 
-- [ ] **Redeploy del backend PocketBase** para correr las **8 migraciones nuevas**
-  (`1781100100`–`1781100170`):
+- [ ] **Redeploy del backend PocketBase** para correr las **9 migraciones nuevas**
+  (`1781100100`–`1781100180`) y cargar el hook nuevo `users_activo_login.pb.js`:
   - `…100`–`…120`: cursos de Ciencias, lecciones y asignación de la alumna demo.
   - `…130`–`…140`: extensión de `simulacros_paes` + `resultados_simulacro_paes` y
     seed de los 8 simulacros-PDF originales.
@@ -19,6 +19,12 @@ redeploy del backend para quedar activo. Detalle del cambio en
   - `…170` (**Fase 2.2, editor enriquecido**): agrega a `preguntas_paes` los campos
     `dificultad`, `piloto` e `imagen_enunciado`/`imagen_contexto`/`imagen_a…e`, y a
     `simulacros_paes` el campo `instrucciones`.
+  - `…180` (**Fase 2.3, gestión de usuarios**): abre `create/update/delete/manageRule`
+    de `users` al admin (antes solo el superuser podía crear/editar cuentas), y
+    backfillea `emailVisibility=true` + `activo=true` en los usuarios existentes. El
+    hook nuevo `users_activo_login.pb.js` bloquea el login si `activo=false` (soft-disable)
+    y defaultea `activo=true` al crear. **Sin este redeploy el panel de usuarios no
+    puede crear ni editar cuentas** (la API las rechaza) y la lista sale sin emails.
 
   Hasta el redeploy, los cursos y simulacros **no existen** en la DB. Tras correr,
   verificar en el admin PB: 3 cursos `materia="ciencias"`, 7 `simulacros_paes` con
@@ -136,7 +142,10 @@ redeploy del backend para quedar activo. Detalle del cambio en
   Volver a poner "Próximo Pago" en el dashboard.
 
 - [ ] **Dashboard del admin: reportes**
-  Tab "Reportes" con: asistencia promedio por curso, estudiantes con < 75% asistencia, leads sin contactar.
+  Ya existe la tab **"Resumen"** (Fase 2.3) con contadores: estudiantes, apoderados,
+  profesores, administrativos, cursos, simulacros, pagos pendientes, leads y cuentas
+  inactivas. Falta el reporte analítico: asistencia promedio por curso, estudiantes
+  con < 75% asistencia, leads sin contactar.
 
 ## Mejoras técnicas (no urgentes)
 

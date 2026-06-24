@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
-import { BookOpen, FolderOpen, Users, Trash2, Plus, AlertCircle, CalendarCheck, GraduationCap, Pencil, FileUp } from 'lucide-react';
+import { BookOpen, FolderOpen, Users, Trash2, Plus, AlertCircle, CalendarCheck, GraduationCap, Pencil, FileUp, LayoutDashboard, UserCog } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +17,8 @@ import CourseCard from '@/components/CourseCard.jsx';
 import StudentSearchCombobox from '@/components/StudentSearchCombobox.jsx';
 import EnrolledStudentsList from '@/components/EnrolledStudentsList.jsx';
 import AttendanceTab from '@/components/AttendanceTab.jsx';
+import AdminOverviewTab from '@/components/admin/AdminOverviewTab.jsx';
+import UsuariosTab from '@/components/admin/UsuariosTab.jsx';
 
 const ASIGNATURA_PAES_LABEL = {
   competencia_lectora: 'Competencia Lectora',
@@ -319,8 +321,12 @@ const AdminDashboard = () => {
         </div>
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Tabs defaultValue="cursos" className="w-full">
-            <TabsList className="mb-8 grid w-full grid-cols-1 md:grid-cols-5 max-w-5xl bg-card shadow-sm h-auto p-1 border border-border/50">
+          <Tabs defaultValue="resumen" className="w-full">
+            <TabsList className="mb-8 grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 max-w-6xl bg-card shadow-sm h-auto p-1 border border-border/50">
+              <TabsTrigger value="resumen" className="py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all">
+                <LayoutDashboard className="w-4 h-4 mr-2" />
+                Resumen
+              </TabsTrigger>
               <TabsTrigger value="cursos" className="py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all">
                 <BookOpen className="w-4 h-4 mr-2" />
                 Cursos
@@ -341,7 +347,16 @@ const AdminDashboard = () => {
                 <GraduationCap className="w-4 h-4 mr-2" />
                 Ensayos PAES
               </TabsTrigger>
+              <TabsTrigger value="usuarios" className="py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all">
+                <UserCog className="w-4 h-4 mr-2" />
+                Usuarios
+              </TabsTrigger>
             </TabsList>
+
+            {/* TAB 0: RESUMEN */}
+            <TabsContent value="resumen" className="space-y-8 animate-in fade-in-50 duration-500">
+              <AdminOverviewTab />
+            </TabsContent>
 
             {/* TAB 1: CURSOS */}
             <TabsContent value="cursos" className="space-y-8 animate-in fade-in-50 duration-500">
@@ -705,6 +720,11 @@ const AdminDashboard = () => {
                   )}
                 </div>
               </div>
+            </TabsContent>
+
+            {/* TAB 6: USUARIOS */}
+            <TabsContent value="usuarios" className="space-y-8 animate-in fade-in-50 duration-500">
+              <UsuariosTab />
             </TabsContent>
           </Tabs>
         </div>
