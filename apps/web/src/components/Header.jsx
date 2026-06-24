@@ -96,13 +96,15 @@ const Header = () => {
         <div className="flex h-16 items-center justify-between">
           <Link
             to="/"
-            className="flex items-center gap-2.5 transition-opacity duration-200 hover:opacity-80"
+            className="flex items-center transition-opacity duration-200 hover:opacity-80"
           >
-            <img src="/favicon.svg" alt="PrePa" className="h-9 w-9 shrink-0" />
-            <span className="flex flex-col items-start leading-none">
-              <span className="text-2xl font-bold text-primary">PrePa</span>
-              <span className="text-xs text-muted-foreground hidden sm:block mt-0.5">Tu camino a la universidad</span>
-            </span>
+            <img
+              src="/logo.webp"
+              alt="PrePa — Prepara tu futuro"
+              className="h-11 w-auto shrink-0"
+              width="44"
+              height="44"
+            />
           </Link>
 
           {/* Desktop Navigation */}
@@ -225,12 +227,14 @@ const Header = () => {
             </SheetTrigger>
             <SheetContent side="right" className="w-[280px]">
               <div className="flex flex-col gap-6 mt-8">
-                <div className="flex items-center gap-2.5 mb-4">
-                  <img src="/favicon.svg" alt="PrePa" className="h-9 w-9 shrink-0" />
-                  <div className="flex flex-col items-start leading-none">
-                    <span className="text-2xl font-bold text-primary">PrePa</span>
-                    <span className="text-xs text-muted-foreground mt-0.5">Tu camino a la universidad</span>
-                  </div>
+                <div className="flex items-center mb-4">
+                  <img
+                    src="/logo.webp"
+                    alt="PrePa — Prepara tu futuro"
+                    className="h-11 w-auto shrink-0"
+                    width="44"
+                    height="44"
+                  />
                 </div>
                 
                 {renderNavLinks(true)}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Mail, MapPin, MessageCircle, Instagram, Facebook, GraduationCap } from 'lucide-react';
+import { Mail, MapPin, MessageCircle, Instagram, Facebook } from 'lucide-react';
 
 const WHATSAPP_NUMBER = '+56 9 0000 0000'; // editable en el panel admin (PB) o hardcodear cuando esté
 const WHATSAPP_URL = 'https://wa.me/56900000000'; // ídem
@@ -30,14 +30,14 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
           {/* Marca + claim */}
           <div className="md:col-span-5">
-            <Link to="/" className="inline-flex items-center gap-2 mb-4">
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                <GraduationCap className="h-6 w-6" />
-              </span>
-              <div className="leading-tight">
-                <span className="block text-xl font-bold text-primary font-display">PrePa</span>
-                <span className="block text-xs text-muted-foreground">Prepará tu futuro</span>
-              </div>
+            <Link to="/" className="inline-flex items-center mb-4">
+              <img
+                src="/logo.webp"
+                alt="PrePa — Prepara tu futuro"
+                className="h-16 w-auto"
+                width="64"
+                height="64"
+              />
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-md">
               Preuniversitario PAES con sede en Punta Arenas. Acompañamos a estudiantes de
@@ -157,7 +157,7 @@ const Footer = () => {
         {/* Línea inferior */}
         <div className="border-t mt-10 pt-6 flex flex-col md:flex-row justify-between items-center gap-3">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} PrePa — Operado en Punta Arenas, Magallanes <span aria-hidden="true">🐧</span>
+            © {new Date().getFullYear()} PrePa — Operado en Punta Arenas, Magallanes
           </p>
           <div className="flex gap-6 text-sm">
             <a href="#" className="text-muted-foreground hover:text-primary transition-colors duration-fast">

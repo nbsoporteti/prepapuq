@@ -13,8 +13,6 @@ import {
   MapPin,
   MessageCircle,
   ShieldCheck,
-  Sparkles,
-  TrendingUp,
   Users,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -217,24 +215,21 @@ const HomePage = () => {
         {/* =========================================================== */}
         {/* SECCIÓN 1 — HERO INSTITUCIONAL                              */}
         {/* =========================================================== */}
-        <section id="inicio" className="relative overflow-hidden bg-slate-950 text-white">
-          {/* glows de marca */}
-          <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-            <div className="absolute -top-32 -left-24 h-96 w-96 rounded-full bg-primary/20 blur-3xl" />
-            <div className="absolute top-1/4 -right-24 h-[28rem] w-[28rem] rounded-full bg-secondary/20 blur-3xl" />
-          </div>
-
-          <div className="container relative mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 lg:py-28">
+        <section
+          id="inicio"
+          className="relative overflow-hidden border-b bg-gradient-to-b from-secondary-soft/50 via-background to-background"
+        >
+          <div className="container relative mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
             {/* barra de admisión */}
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-sm backdrop-blur"
+              className="mb-8 inline-flex items-center gap-2 rounded-full border bg-card px-4 py-1.5 text-sm shadow-sm"
             >
-              <span className="h-2 w-2 rounded-full bg-accent animate-pulse-soft" aria-hidden="true" />
-              <span className="text-white/85">
-                <strong className="font-semibold text-white">Admisión 2027 abierta</strong>
+              <span className="h-2 w-2 rounded-full bg-success" aria-hidden="true" />
+              <span className="text-muted-foreground">
+                <strong className="font-semibold text-foreground">Admisión 2027 abierta</strong>
                 <span className="hidden sm:inline"> · cupos por grupo limitados</span>
               </span>
             </motion.div>
@@ -246,14 +241,14 @@ const HomePage = () => {
                 transition={{ duration: 0.6, ease: [0.2, 0.8, 0.2, 1] }}
                 className="lg:col-span-7"
               >
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-white/90">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-secondary/30 bg-secondary/5 px-3 py-1 text-xs font-medium text-secondary">
                   <MapPin className="h-3 w-3" />
                   Punta Arenas · Magallanes
                 </span>
-                <h1 className="mt-5 font-display text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-balance leading-[1.05]">
+                <h1 className="mt-5 font-display text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-balance leading-[1.05] text-foreground">
                   El preuniversitario PAES de Magallanes que te conoce por <span className="text-primary">nombre</span>.
                 </h1>
-                <p className="mt-6 text-lg md:text-xl text-slate-300 max-w-2xl leading-relaxed">
+                <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
                   Profesores locales con CV verificable, simulacros mensuales con percentil y
                   planes presenciales, online o mixtos. Preparate para entrar a la universidad
                   sin salir de Punta Arenas.
@@ -271,7 +266,7 @@ const HomePage = () => {
                     asChild
                     variant="outline"
                     size="lg"
-                    className="border-white/25 bg-white/5 text-white hover:bg-white/10 hover:text-white text-base px-7"
+                    className="text-base px-7"
                   >
                     <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
                       <MessageCircle className="mr-2 h-4 w-4 text-success" />
@@ -279,7 +274,7 @@ const HomePage = () => {
                     </a>
                   </Button>
                 </div>
-                <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-300">
+                <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1.5">
                     <CheckCircle2 className="h-4 w-4 text-success" />
                     Grupos chicos (≤25)
@@ -295,50 +290,52 @@ const HomePage = () => {
                 </div>
               </motion.div>
 
-              {/* Card de credibilidad */}
+              {/* Panel de marca — logo real + cifras estructurales verdaderas */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.6, delay: 0.15, ease: [0.2, 0.8, 0.2, 1] }}
                 className="lg:col-span-5"
               >
-                <div className="relative">
-                  <div className="absolute -inset-3 bg-gradient-to-br from-primary/30 to-secondary/30 rounded-3xl blur-2xl" aria-hidden="true" />
-                  <div className="relative rounded-3xl border bg-card text-card-foreground shadow-2xl p-6 md:p-8">
-                    <div className="flex items-center gap-2 mb-5">
-                      <span className="inline-flex h-2 w-2 rounded-full bg-success animate-pulse-soft" aria-hidden="true" />
-                      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                        Promoción {resultados?.anio_promocion || 'en curso'}
-                      </span>
+                <div className="rounded-3xl border bg-card shadow-lg p-8 md:p-10">
+                  <img
+                    src="/logo.webp"
+                    alt="PrePa — Prepara tu futuro"
+                    className="mx-auto h-28 w-auto"
+                    width="224"
+                    height="224"
+                  />
+
+                  <div className="mt-8 grid grid-cols-3 gap-2 text-center">
+                    <div>
+                      <p className="font-mono text-2xl md:text-3xl font-bold tabular-nums text-primary">5</p>
+                      <p className="mt-1 text-xs text-muted-foreground leading-tight">pruebas PAES</p>
                     </div>
-                    <p className="text-sm text-muted-foreground mb-1">Puntaje PAES promedio</p>
-                    <p className="font-mono text-5xl md:text-6xl font-bold tabular-nums text-foreground">
-                      {resultados?.puntaje_promedio_general
-                        ? Math.round(resultados.puntaje_promedio_general)
-                        : '—'}
-                      <span className="text-base font-normal text-muted-foreground ml-2">/ 1000</span>
-                    </p>
-                    {resultados?.mejora_promedio_pts ? (
-                      <p className="mt-3 text-sm text-success font-medium flex items-center gap-1.5">
-                        <TrendingUp className="h-4 w-4" />
-                        +{resultados.mejora_promedio_pts} pts vs diagnóstico inicial
-                      </p>
-                    ) : (
-                      <p className="mt-3 text-sm text-muted-foreground">
-                        Publicamos el promedio con el N exacto apenas DEMRE entregue los puntajes.
-                      </p>
-                    )}
-                    <div className="mt-6 pt-6 border-t flex items-center gap-4">
-                      <div className="flex -space-x-2">
-                        <div className="h-10 w-10 rounded-full bg-primary/20 ring-2 ring-card flex items-center justify-center text-xs font-semibold text-primary">PA</div>
-                        <div className="h-10 w-10 rounded-full bg-secondary/20 ring-2 ring-card flex items-center justify-center text-xs font-semibold text-secondary">MS</div>
-                        <div className="h-10 w-10 rounded-full bg-accent/20 ring-2 ring-card flex items-center justify-center text-xs font-semibold text-accent">JC</div>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Equipo docente con experiencia universitaria comprobable
-                      </p>
+                    <div className="border-x">
+                      <p className="font-mono text-2xl md:text-3xl font-bold tabular-nums text-secondary">≤25</p>
+                      <p className="mt-1 text-xs text-muted-foreground leading-tight">por grupo</p>
+                    </div>
+                    <div>
+                      <p className="font-mono text-2xl md:text-3xl font-bold tabular-nums text-foreground">3</p>
+                      <p className="mt-1 text-xs text-muted-foreground leading-tight">modalidades</p>
                     </div>
                   </div>
+
+                  {resultados?.puntaje_promedio_general ? (
+                    <div className="mt-7 pt-6 border-t text-center">
+                      <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                        Puntaje PAES promedio · Promoción {resultados.anio_promocion}
+                      </p>
+                      <p className="mt-1 font-mono text-4xl font-bold tabular-nums text-foreground">
+                        {Math.round(resultados.puntaje_promedio_general)}
+                        <span className="text-base font-normal text-muted-foreground ml-1">/ 1000</span>
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="mt-7 pt-6 border-t text-center text-sm text-muted-foreground">
+                      Preuniversitario PAES en Punta Arenas, Magallanes
+                    </p>
+                  )}
                 </div>
               </motion.div>
             </div>
@@ -522,7 +519,7 @@ const HomePage = () => {
               </div>
             ) : (
               <div className="max-w-2xl mx-auto p-8 rounded-2xl border bg-card shadow-sm text-center">
-                <Sparkles className="h-8 w-8 text-primary mx-auto mb-3" />
+                <GraduationCap className="h-8 w-8 text-primary mx-auto mb-3" />
                 <p className="text-lg font-medium text-foreground">
                   Estamos preparando nuestra primera promoción
                 </p>
