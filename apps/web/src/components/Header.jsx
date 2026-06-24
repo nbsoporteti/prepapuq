@@ -1,16 +1,25 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, LogOut, LayoutDashboard } from 'lucide-react';
+import { Menu, LogOut, LayoutDashboard, Bell } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext.jsx';
+import RolContextSwitcher from '@/components/shared/RolContextSwitcher.jsx';
+
+const DASHBOARD_POR_ROL = {
+  estudiante: '/dashboard/estudiante',
+  apoderado: '/dashboard/apoderado',
+  profesor: '/dashboard/profesor',
+  administrativo: '/dashboard/administrativo',
+  admin: '/dashboard/admin',
+};
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated, currentUser, logout } = useAuth();
-  
+  const { isAuthenticated, currentUser, logout, rolActivo, rolesEffective } = useAuth();
+
   const isHomePage = location.pathname === '/';
 
   const scrollToSection = (sectionId) => {
@@ -33,8 +42,12 @@ const Header = () => {
   };
 
   const getDashboardLink = () => {
-    if (!currentUser?.rol) return '/login';
-    return `/dashboard/${currentUser.rol}`;
+    if (rolActivo && DASHBOARD_POR_ROL[rolActivo]) return DASHBOARD_POR_ROL[rolActivo];
+    if (currentUser?.rol && DASHBOARD_POR_ROL[currentUser.rol]) return DASHBOARD_POR_ROL[currentUser.rol];
+    if (rolesEffective && rolesEffective.length > 0 && DASHBOARD_POR_ROL[rolesEffective[0]]) {
+      return DASHBOARD_POR_ROL[rolesEffective[0]];
+    }
+    return '/login';
   };
 
   const navLinks = [
@@ -79,10 +92,21 @@ const Header = () => {
             {isHomePage && <div className="h-4 w-px bg-border mx-2 hidden lg:block"></div>}
 
             {isAuthenticated ? (
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-medium text-muted-foreground">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-muted-foreground hidden lg:inline">
                   Hola, <span className="text-foreground">{currentUser?.name || 'Usuario'}</span>
                 </span>
+                <RolContextSwitcher />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Notificaciones"
+                  disabled
+                  title="Notificaciones (próximamente)"
+                  className="relative text-muted-foreground"
+                >
+                  <Bell className="h-4 w-4" />
+                </Button>
                 <Button variant="outline" size="sm" asChild>
                   <Link to={getDashboardLink()}>
                     <LayoutDashboard className="mr-2 h-4 w-4 text-secondary" />

@@ -10,6 +10,8 @@ import EstudianteDashboard from './pages/EstudianteDashboard.jsx';
 import CourseDetailPage from './pages/CourseDetailPage.jsx';
 import ApoderadoDashboard from './pages/ApoderadoDashboard.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
+import ProfesorDashboard from './pages/profesor/ProfesorDashboard.jsx';
+import AdministrativoDashboard from './pages/administrativo/AdministrativoDashboard.jsx';
 import ProtectedRoute from '@/components/ProtectedRoute.jsx';
 import { AuthProvider } from '@/contexts/AuthContext.jsx';
 import Header from '@/components/Header.jsx';
@@ -54,15 +56,33 @@ function App() {
                 } 
               />
               
-              <Route 
-                path="/dashboard/admin" 
+              <Route
+                path="/dashboard/admin"
                 element={
                   <ProtectedRoute allowedRole="admin">
                     <AdminDashboard />
                   </ProtectedRoute>
-                } 
+                }
               />
-              
+
+              <Route
+                path="/dashboard/profesor"
+                element={
+                  <ProtectedRoute allowedRoles={["profesor", "admin"]}>
+                    <ProfesorDashboard />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/dashboard/administrativo"
+                element={
+                  <ProtectedRoute allowedRoles={["administrativo", "admin"]}>
+                    <AdministrativoDashboard />
+                  </ProtectedRoute>
+                }
+              />
+
               <Route path="*" element={<HomePage />} />
             </Routes>
           </main>
