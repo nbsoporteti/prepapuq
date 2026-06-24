@@ -6,6 +6,8 @@ import HomePage from './pages/HomePage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
 import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
+import ClasesPublicasLandingPage from './pages/ClasesPublicasLandingPage.jsx';
+import ClasePublicaDetallePage from './pages/ClasePublicaDetallePage.jsx';
 import EstudianteDashboard from './pages/EstudianteDashboard.jsx';
 import CourseDetailPage from './pages/CourseDetailPage.jsx';
 import ApoderadoDashboard from './pages/ApoderadoDashboard.jsx';
@@ -29,6 +31,8 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/clases-gratis" element={<ClasesPublicasLandingPage />} />
+              <Route path="/clases-gratis/:id" element={<ClasePublicaDetallePage />} />
 
               <Route
                 path="/dashboard/estudiante"
