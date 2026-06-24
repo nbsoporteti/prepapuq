@@ -13,6 +13,7 @@ import CourseDetailPage from './pages/CourseDetailPage.jsx';
 import ApoderadoDashboard from './pages/ApoderadoDashboard.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
 import ProfesorDashboard from './pages/profesor/ProfesorDashboard.jsx';
+import SeccionDetalle from './pages/profesor/SeccionDetalle.jsx';
 import AdministrativoDashboard from './pages/administrativo/AdministrativoDashboard.jsx';
 import ProtectedRoute from '@/components/ProtectedRoute.jsx';
 import { AuthProvider } from '@/contexts/AuthContext.jsx';
@@ -74,6 +75,15 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={["profesor", "admin"]}>
                     <ProfesorDashboard />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/dashboard/profesor/seccion/:seccionId"
+                element={
+                  <ProtectedRoute allowedRoles={["profesor", "admin"]}>
+                    <SeccionDetalle />
                   </ProtectedRoute>
                 }
               />
