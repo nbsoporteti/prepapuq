@@ -19,6 +19,10 @@ import CalificarEvaluacionBulk from './pages/profesor/CalificarEvaluacionBulk.js
 import EstudianteTareasPage from './pages/estudiante/EstudianteTareasPage.jsx';
 import EstudianteTareaDetailPage from './pages/estudiante/EstudianteTareaDetailPage.jsx';
 import AdministrativoDashboard from './pages/administrativo/AdministrativoDashboard.jsx';
+import NotificacionesPage from './pages/NotificacionesPage.jsx';
+import AnunciosPage from './pages/AnunciosPage.jsx';
+import PerfilGeneral from './pages/PerfilGeneral.jsx';
+import NotFoundPage from './pages/NotFoundPage.jsx';
 import ProtectedRoute from '@/components/ProtectedRoute.jsx';
 import { AuthProvider } from '@/contexts/AuthContext.jsx';
 import Header from '@/components/Header.jsx';
@@ -137,7 +141,31 @@ function App() {
                 }
               />
 
-              <Route path="*" element={<HomePage />} />
+              <Route path="/notificaciones" element={
+                <ProtectedRoute>
+                  <NotificacionesPage />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/anuncios" element={
+                <ProtectedRoute>
+                  <AnunciosPage />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/anuncios/:anuncioId" element={
+                <ProtectedRoute>
+                  <AnunciosPage />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/perfil" element={
+                <ProtectedRoute>
+                  <PerfilGeneral />
+                </ProtectedRoute>
+              } />
+
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </main>
         </div>

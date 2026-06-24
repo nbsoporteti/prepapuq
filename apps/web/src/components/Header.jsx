@@ -1,10 +1,20 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, LogOut, LayoutDashboard, Bell } from 'lucide-react';
+import { Menu, LogOut, LayoutDashboard, MessageCircle, User } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import RolContextSwitcher from '@/components/shared/RolContextSwitcher.jsx';
+import NotificationsBell from '@/components/notif/NotificationsBell.jsx';
+import MessengerSheet from '@/components/mensajes/MessengerSheet.jsx';
+import { useMessenger } from '@/hooks/useMessenger.js';
 
 const DASHBOARD_POR_ROL = {
   estudiante: '/dashboard/estudiante',
@@ -16,9 +26,11 @@ const DASHBOARD_POR_ROL = {
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [messengerOpen, setMessengerOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, currentUser, logout, rolActivo, rolesEffective } = useAuth();
+  const { unreadTotal } = useMessenger(currentUser?.id);
 
   const isHomePage = location.pathname === '/';
 
@@ -92,31 +104,68 @@ const Header = () => {
             {isHomePage && <div className="h-4 w-px bg-border mx-2 hidden lg:block"></div>}
 
             {isAuthenticated ? (
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-muted-foreground hidden lg:inline">
-                  Hola, <span className="text-foreground">{currentUser?.name || 'Usuario'}</span>
-                </span>
+              <div className="flex items-center gap-2">
                 <RolContextSwitcher />
+
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label="Notificaciones"
-                  disabled
-                  title="Notificaciones (próximamente)"
-                  className="relative text-muted-foreground"
+                  aria-label="Mensajes"
+                  className="relative text-muted-foreground hover:text-foreground"
+                  onClick={() => setMessengerOpen(true)}
                 >
-                  <Bell className="h-4 w-4" />
+                  <MessageCircle className="h-4 w-4" />
+                  {unreadTotal > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-mono font-bold px-1">
+                      {unreadTotal > 99 ? '99+' : unreadTotal}
+                    </span>
+                  )}
                 </Button>
-                <Button variant="outline" size="sm" asChild>
+
+                <NotificationsBell />
+
+                <Button variant="outline" size="sm" asChild className="hidden md:inline-flex">
                   <Link to={getDashboardLink()}>
                     <LayoutDashboard className="mr-2 h-4 w-4 text-secondary" />
-                    Mi Panel
+                    Mi panel
                   </Link>
                 </Button>
-                <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-destructive">
-                  <LogOut className="h-4 w-4" />
-                  <span className="sr-only">Cerrar Sesión</span>
-                </Button>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="rounded-full">
+                      <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
+                        {(currentUser?.name || currentUser?.email || '?').charAt(0).toUpperCase()}
+                      </div>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <div className="px-2 py-1.5 text-sm">
+                      <p className="font-medium truncate">{currentUser?.name || 'Usuario'}</p>
+                      <p className="text-xs text-muted-foreground truncate">{currentUser?.email}</p>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to={getDashboardLink()}>
+                        <LayoutDashboard className="h-4 w-4 mr-2" />
+                        Mi panel
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/perfil">
+                        <User className="h-4 w-4 mr-2" />
+                        Mi perfil
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={handleLogout} className="text-destructive">
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Cerrar sesión
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <MessengerSheet open={messengerOpen} onOpenChange={setMessengerOpen} />
               </div>
             ) : (
               <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
