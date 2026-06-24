@@ -12,6 +12,7 @@ import EstudianteDashboard from './pages/EstudianteDashboard.jsx';
 import CourseDetailPage from './pages/CourseDetailPage.jsx';
 import ApoderadoDashboard from './pages/ApoderadoDashboard.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
+import AdminPAESImportPage from './pages/admin/AdminPAESImportPage.jsx';
 import ProfesorDashboard from './pages/profesor/ProfesorDashboard.jsx';
 import SeccionDetalle from './pages/profesor/SeccionDetalle.jsx';
 import ProfesorCalificarTareaPage from './pages/profesor/ProfesorCalificarTareaPage.jsx';
@@ -80,6 +81,15 @@ function App() {
                 element={
                   <ProtectedRoute allowedRole="admin">
                     <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/dashboard/admin/paes"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "profesor"]}>
+                    <AdminPAESImportPage />
                   </ProtectedRoute>
                 }
               />

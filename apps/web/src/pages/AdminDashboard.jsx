@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
-import { BookOpen, FolderOpen, Users, Trash2, Plus, AlertCircle, CalendarCheck } from 'lucide-react';
+import { BookOpen, FolderOpen, Users, Trash2, Plus, AlertCircle, CalendarCheck, GraduationCap, Pencil, FileUp } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -16,12 +18,21 @@ import StudentSearchCombobox from '@/components/StudentSearchCombobox.jsx';
 import EnrolledStudentsList from '@/components/EnrolledStudentsList.jsx';
 import AttendanceTab from '@/components/AttendanceTab.jsx';
 
+const ASIGNATURA_PAES_LABEL = {
+  competencia_lectora: 'Competencia Lectora',
+  matematica_m1: 'Matemática M1',
+  matematica_m2: 'Matemática M2',
+  historia: 'Historia y Cs. Sociales',
+  ciencias: 'Ciencias',
+};
+
 const AdminDashboard = () => {
   const { currentUser } = useAuth();
   
   // Shared State
   const [cursos, setCursos] = useState([]);
-  
+  const [simulacrosPaes, setSimulacrosPaes] = useState([]);
+
   // Tab 1 State: Cursos
   const [courseForm, setCourseForm] = useState({ nombre: '', descripcion: '', portada: null });
   const [isSubmittingCourse, setIsSubmittingCourse] = useState(false);
@@ -51,6 +62,7 @@ const AdminDashboard = () => {
   // Initial Load
   useEffect(() => {
     fetchCursos();
+    fetchSimulacrosPaes();
   }, []);
 
   const fetchCursos = async () => {
@@ -60,6 +72,27 @@ const AdminDashboard = () => {
     } catch (err) {
       console.error('[ENROLLMENT DEBUG]', 'Error fetching courses:', err);
       toast.error('Error al cargar cursos');
+    }
+  };
+
+  const fetchSimulacrosPaes = async () => {
+    try {
+      const records = await pb.collection('simulacros_paes').getFullList({ sort: '-created', $autoCancel: false });
+      setSimulacrosPaes(records);
+    } catch (err) {
+      // La colección puede no existir todavía (backend sin redeploy): no es fatal.
+      setSimulacrosPaes([]);
+    }
+  };
+
+  const handleDeleteSimulacro = async (id) => {
+    if (!window.confirm('¿Eliminar este simulacro y todas sus preguntas? No se puede deshacer.')) return;
+    try {
+      await pb.collection('simulacros_paes').delete(id, { $autoCancel: false });
+      toast.success('Simulacro eliminado');
+      fetchSimulacrosPaes();
+    } catch (err) {
+      toast.error('Error al eliminar el simulacro');
     }
   };
 
@@ -287,7 +320,7 @@ const AdminDashboard = () => {
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Tabs defaultValue="cursos" className="w-full">
-            <TabsList className="mb-8 grid w-full grid-cols-1 md:grid-cols-4 max-w-4xl bg-card shadow-sm h-auto p-1 border border-border/50">
+            <TabsList className="mb-8 grid w-full grid-cols-1 md:grid-cols-5 max-w-5xl bg-card shadow-sm h-auto p-1 border border-border/50">
               <TabsTrigger value="cursos" className="py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all">
                 <BookOpen className="w-4 h-4 mr-2" />
                 Cursos
@@ -303,6 +336,10 @@ const AdminDashboard = () => {
               <TabsTrigger value="asistencia" className="py-3 data-[state=active]:bg-green-100 data-[state=active]:text-green-700 transition-all">
                 <CalendarCheck className="w-4 h-4 mr-2" />
                 Asistencia
+              </TabsTrigger>
+              <TabsTrigger value="paes" className="py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all">
+                <GraduationCap className="w-4 h-4 mr-2" />
+                Ensayos PAES
               </TabsTrigger>
             </TabsList>
 
@@ -560,13 +597,114 @@ const AdminDashboard = () => {
 
             {/* TAB 4: ASISTENCIA */}
             <TabsContent value="asistencia" className="space-y-8 animate-in fade-in-50 duration-500">
-              <AttendanceTab 
+              <AttendanceTab
                 cursos={cursos}
                 selectedCourse={selectedCourseForAssign}
                 onCourseChange={setSelectedCourseForAssign}
                 asignaciones={asignaciones}
                 isLoading={isLoadingAsignaciones}
               />
+            </TabsContent>
+
+            {/* TAB 5: ENSAYOS PAES */}
+            <TabsContent value="paes" className="space-y-8 animate-in fade-in-50 duration-500">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <Card className="lg:col-span-1 h-fit border-primary/30 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <GraduationCap className="h-5 w-5 text-primary" />
+                      Importar ensayo PAES
+                    </CardTitle>
+                    <CardDescription>
+                      Pegá las preguntas en texto y el sistema arma la clave solo. Queda
+                      auto-corrigiendo, igual que los mini-ensayos.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <Button asChild className="w-full">
+                      <Link to="/dashboard/admin/paes">
+                        <FileUp className="h-4 w-4 mr-2" />
+                        Nuevo ensayo (pegar preguntas)
+                      </Link>
+                    </Button>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Solo contenido propio o autorizado. No subas transcripciones de ensayos
+                      oficiales DEMRE (su licencia lo prohíbe).
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <div className="lg:col-span-2">
+                  <h3 className="text-xl font-semibold mb-4">
+                    Simulacros cargados ({simulacrosPaes.length})
+                  </h3>
+                  {simulacrosPaes.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center p-12 border rounded-2xl bg-card text-center shadow-sm">
+                      <GraduationCap className="h-12 w-12 text-muted-foreground/50 mb-4" />
+                      <p className="text-muted-foreground font-medium">No hay simulacros todavía</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Creá el primero con “Nuevo ensayo”.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {simulacrosPaes.map((s) => {
+                        const interactivo = s.modo === 'interactivo';
+                        const publicado = s.estado === 'publicado';
+                        return (
+                          <div
+                            key={s.id}
+                            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-4 shadow-sm"
+                          >
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="font-semibold">{s.titulo}</span>
+                                <Badge variant="outline" className="font-normal">
+                                  {ASIGNATURA_PAES_LABEL[s.asignatura] || s.asignatura}
+                                </Badge>
+                                {interactivo ? (
+                                  <Badge className="border-0 bg-primary/10 text-primary">Interactivo</Badge>
+                                ) : (
+                                  <Badge variant="secondary">PDF</Badge>
+                                )}
+                                <Badge
+                                  variant="outline"
+                                  className={publicado ? 'border-success/40 text-success' : 'text-muted-foreground'}
+                                >
+                                  {publicado ? 'Publicado' : s.estado}
+                                </Badge>
+                              </div>
+                              <p className="mt-1 text-sm text-muted-foreground">
+                                {s.n_preguntas_total || 0} preguntas
+                                {s.duracion_min ? ` · ${s.duracion_min} min` : ''}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {interactivo && (
+                                <Button variant="outline" size="sm" asChild>
+                                  <Link to={`/dashboard/admin/paes?id=${s.id}`}>
+                                    <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                                    Editar
+                                  </Link>
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => handleDeleteSimulacro(s.id)}
+                                title="Eliminar simulacro"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
             </TabsContent>
           </Tabs>
         </div>
