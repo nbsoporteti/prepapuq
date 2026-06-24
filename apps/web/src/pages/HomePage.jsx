@@ -1,16 +1,18 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
   ArrowRight,
   CheckCircle2,
+  Clock,
   GraduationCap,
   Laptop,
   Layers,
   MapPin,
   MessageCircle,
+  ShieldCheck,
   Sparkles,
   TrendingUp,
   Users,
@@ -36,6 +38,8 @@ import StatCounter from '@/components/landing/StatCounter.jsx';
 import TeacherCard from '@/components/landing/TeacherCard.jsx';
 import AlumnoTestimonialCard from '@/components/landing/AlumnoTestimonialCard.jsx';
 import PaesTimeline from '@/components/landing/PaesTimeline.jsx';
+import CifrasBand from '@/components/landing/CifrasBand.jsx';
+import ProgramasSection from '@/components/landing/ProgramasSection.jsx';
 import pb from '@/lib/pocketbaseClient';
 
 const WHATSAPP_URL = 'https://wa.me/56900000000';
@@ -50,6 +54,41 @@ const PAES_HITOS_2026 = [
   { id: 'agosto', mes: 'Agosto', label: 'PAES de Invierno', descripcion: 'Primera rendición posible', status: 'future' },
   { id: 'octubre', mes: 'Oct-Nov', label: 'Simulacros intensivos', descripcion: 'Foco en debilidades', status: 'future' },
   { id: 'diciembre', mes: 'Diciembre', label: 'PAES Regular', descripcion: 'Rendición oficial', status: 'future' },
+];
+
+// "¿Por qué PrePa?" — fusiona los bullets del hero anterior con la lista
+// "por qué local". Es el diferenciador frente a los preus nacionales.
+const METODOLOGIA_FEATURES = [
+  {
+    icon: MapPin,
+    titulo: 'Profesores que viven acá',
+    descripcion: 'No vienen y se van: están todo el año, en tu misma zona horaria, para responder dudas.',
+  },
+  {
+    icon: Users,
+    titulo: 'Grupos chicos, atención real',
+    descripcion: 'Máximo 25 alumnos por grupo. Cada estudiante es conocido por nombre, no por número de lista.',
+  },
+  {
+    icon: GraduationCap,
+    titulo: 'Foco en universidades chilenas',
+    descripcion: 'Conocemos los procesos de la UC, U. de Chile, UMAG, USACH y las pasarelas SUR.',
+  },
+  {
+    icon: Clock,
+    titulo: 'Horarios pensados para Magallanes',
+    descripcion: 'Adaptados a las horas de luz, los días de viento blanco y los tiempos de viaje a la sede.',
+  },
+  {
+    icon: ShieldCheck,
+    titulo: 'Resultados auditables',
+    descripcion: 'Publicamos las cifras con el N exacto. Cualquier apoderado puede verificarlas con DEMRE.',
+  },
+  {
+    icon: MessageCircle,
+    titulo: 'Sin call center',
+    descripcion: 'Te atiende una persona del equipo. Siempre, por WhatsApp directo.',
+  },
 ];
 
 const FAQS = [
@@ -135,11 +174,27 @@ const HomePage = () => {
   const { data: profesores = [] } = useProfesores();
   const { data: testimonios = [] } = useTestimonios();
   const { data: resultados } = useResultadosPAES();
+  const location = useLocation();
 
   const scrollToSection = (id) => {
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
+
+  // Deep-link a sección: si la URL trae #hash (p. ej. /#programas desde el
+  // Header en otra ruta, o una recarga directa), baja a la sección al montar
+  // y en cada cambio de hash. El timeout deja renderizar el contenido primero.
+  useEffect(() => {
+    if (!location.hash) return undefined;
+    const id = location.hash.slice(1);
+    const t = setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }, 80);
+    return () => clearTimeout(t);
+  }, [location.hash]);
+
+  const anioPromocion = new Date().getFullYear() + 1;
 
   return (
     <>
@@ -147,24 +202,43 @@ const HomePage = () => {
         <title>PrePa · Preuniversitario PAES en Punta Arenas | Profesores locales, resultados reales</title>
         <meta
           name="description"
-          content="Preuniversitario PAES en Punta Arenas. Profesores con nombre y CV verificable, simulacros mensuales con percentil, modalidad presencial u online. Conocé al equipo y reservá tu cupo 2027."
+          content="Preuniversitario PAES en Punta Arenas (Magallanes). Planes para 3° medio, 4° medio y egresados, profesores locales con CV verificable y simulacros mensuales con percentil. Modalidad presencial, online o mixta. Admisión 2027 abierta."
         />
+        <meta name="keywords" content="preuniversitario, PAES, Punta Arenas, Magallanes, ensayo PAES, admisión universitaria, Competencia Lectora, Matemática M1, Matemática M2" />
         <meta property="og:title" content="PrePa — Preuniversitario PAES Punta Arenas" />
-        <meta property="og:description" content="El único preu de Magallanes que conoce a cada alumno por nombre. Resultados PAES verificables, profesores locales, simulacros mensuales con percentil." />
+        <meta property="og:description" content="El preuniversitario de Magallanes que conoce a cada alumno por nombre. Planes por nivel, profesores locales con CV verificable y resultados PAES auditables. Admisión 2027 abierta." />
         <meta property="og:type" content="website" />
         <meta property="og:locale" content="es_CL" />
+        <meta name="twitter:card" content="summary_large_image" />
         <link rel="canonical" href="https://prepapuq.cl/" />
       </Helmet>
 
       <main>
         {/* =========================================================== */}
-        {/* SECCIÓN 1 — HERO                                            */}
+        {/* SECCIÓN 1 — HERO INSTITUCIONAL                              */}
         {/* =========================================================== */}
-        <section
-          id="hero"
-          className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-secondary/5"
-        >
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 lg:py-28">
+        <section id="inicio" className="relative overflow-hidden bg-slate-950 text-white">
+          {/* glows de marca */}
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+            <div className="absolute -top-32 -left-24 h-96 w-96 rounded-full bg-primary/20 blur-3xl" />
+            <div className="absolute top-1/4 -right-24 h-[28rem] w-[28rem] rounded-full bg-secondary/20 blur-3xl" />
+          </div>
+
+          <div className="container relative mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 lg:py-28">
+            {/* barra de admisión */}
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-sm backdrop-blur"
+            >
+              <span className="h-2 w-2 rounded-full bg-accent animate-pulse-soft" aria-hidden="true" />
+              <span className="text-white/85">
+                <strong className="font-semibold text-white">Admisión 2027 abierta</strong>
+                <span className="hidden sm:inline"> · cupos por grupo limitados</span>
+              </span>
+            </motion.div>
+
             <div className="grid lg:grid-cols-12 gap-10 lg:gap-14 items-center">
               <motion.div
                 initial={{ opacity: 0, y: 24 }}
@@ -172,32 +246,32 @@ const HomePage = () => {
                 transition={{ duration: 0.6, ease: [0.2, 0.8, 0.2, 1] }}
                 className="lg:col-span-7"
               >
-                <Badge variant="secondary" className="mb-5 bg-secondary/15 text-secondary border-0 font-medium">
-                  <MapPin className="h-3 w-3 mr-1.5" />
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-white/90">
+                  <MapPin className="h-3 w-3" />
                   Punta Arenas · Magallanes
-                </Badge>
-                <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-balance leading-[1.05]">
-                  Conocemos a cada estudiante por su <span className="text-primary">nombre</span>.
-                  <br className="hidden md:block" />
-                  Y a qué <span className="underline decoration-accent decoration-4 underline-offset-4">universidad</span> quiere llegar.
+                </span>
+                <h1 className="mt-5 font-display text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-balance leading-[1.05]">
+                  El preuniversitario PAES de Magallanes que te conoce por <span className="text-primary">nombre</span>.
                 </h1>
-                <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
-                  El único preuniversitario de Magallanes con profesores locales, simulacros PAES mensuales con percentil interno y modalidades flexibles (presencial, online o mixta).
+                <p className="mt-6 text-lg md:text-xl text-slate-300 max-w-2xl leading-relaxed">
+                  Profesores locales con CV verificable, simulacros mensuales con percentil y
+                  planes presenciales, online o mixtos. Preparate para entrar a la universidad
+                  sin salir de Punta Arenas.
                 </p>
                 <div className="mt-8 flex flex-col sm:flex-row gap-3">
                   <Button
                     size="lg"
-                    onClick={() => scrollToSection('contacto')}
+                    onClick={() => scrollToSection('programas')}
                     className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold text-base px-7"
                   >
-                    Quiero más información
+                    Conocer los programas
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                   <Button
                     asChild
                     variant="outline"
                     size="lg"
-                    className="text-base px-7"
+                    className="border-white/25 bg-white/5 text-white hover:bg-white/10 hover:text-white text-base px-7"
                   >
                     <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
                       <MessageCircle className="mr-2 h-4 w-4 text-success" />
@@ -205,23 +279,23 @@ const HomePage = () => {
                     </a>
                   </Button>
                 </div>
-                <div className="mt-8 flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
+                <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-300">
                   <span className="flex items-center gap-1.5">
                     <CheckCircle2 className="h-4 w-4 text-success" />
-                    Clases en grupos chicos
+                    Grupos chicos (≤25)
                   </span>
                   <span className="flex items-center gap-1.5">
                     <CheckCircle2 className="h-4 w-4 text-success" />
-                    Profesores con CV verificable
+                    Profes con CV verificable
                   </span>
                   <span className="flex items-center gap-1.5">
                     <CheckCircle2 className="h-4 w-4 text-success" />
-                    Sin contratos largos
+                    Resultados auditables
                   </span>
                 </div>
               </motion.div>
 
-              {/* Card flotante con preview de resultados */}
+              {/* Card de credibilidad */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -229,8 +303,8 @@ const HomePage = () => {
                 className="lg:col-span-5"
               >
                 <div className="relative">
-                  <div className="absolute -inset-3 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-3xl blur-2xl" aria-hidden="true" />
-                  <div className="relative rounded-3xl border bg-card shadow-lg p-6 md:p-8">
+                  <div className="absolute -inset-3 bg-gradient-to-br from-primary/30 to-secondary/30 rounded-3xl blur-2xl" aria-hidden="true" />
+                  <div className="relative rounded-3xl border bg-card text-card-foreground shadow-2xl p-6 md:p-8">
                     <div className="flex items-center gap-2 mb-5">
                       <span className="inline-flex h-2 w-2 rounded-full bg-success animate-pulse-soft" aria-hidden="true" />
                       <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -251,7 +325,7 @@ const HomePage = () => {
                       </p>
                     ) : (
                       <p className="mt-3 text-sm text-muted-foreground">
-                        Cargá los resultados reales desde el panel admin
+                        Publicamos el promedio con el N exacto apenas DEMRE entregue los puntajes.
                       </p>
                     )}
                     <div className="mt-6 pt-6 border-t flex items-center gap-4">
@@ -272,7 +346,133 @@ const HomePage = () => {
         </section>
 
         {/* =========================================================== */}
-        {/* SECCIÓN 2 — RESULTADOS                                       */}
+        {/* SECCIÓN 2 — BANDA DE CIFRAS                                  */}
+        {/* =========================================================== */}
+        <CifrasBand resultados={resultados} />
+
+        {/* =========================================================== */}
+        {/* SECCIÓN 3 — PROGRAMAS / PLANES (centro de la página)        */}
+        {/* =========================================================== */}
+        <ProgramasSection />
+
+        {/* =========================================================== */}
+        {/* SECCIÓN 4 — MODALIDADES                                      */}
+        {/* =========================================================== */}
+        <section id="modalidades" className="py-20 md:py-24">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-14 max-w-2xl mx-auto">
+              <Badge variant="outline" className="mb-3">Adaptado a tu vida</Badge>
+              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
+                Tres formas de prepararte.
+              </h2>
+              <p className="mt-4 text-muted-foreground text-lg">
+                Punta Arenas tiene su propio ritmo. Elegí la modalidad que se adapta al tuyo.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+              <ModalidadCard
+                icon={Users}
+                titulo="Presencial"
+                descripcion="Clases en nuestra sede en Punta Arenas, en grupos chicos de máximo 25 alumnos. Espacio de estudio abierto en horarios extendidos."
+                bullets={['Cara a cara con el profesor', 'Espacio de estudio incluido', 'Grupos chicos']}
+                accent="primary"
+              />
+              <ModalidadCard
+                icon={Laptop}
+                titulo="Online"
+                descripcion="Mismas clases en vivo por Meet o Zoom, todas grabadas. Ideal si vivís en Puerto Natales, Porvenir, Tierra del Fuego o fuera de la región."
+                bullets={['En vivo + grabadas', 'Material descargable', 'Tutorías 1-a-1 incluidas']}
+                accent="secondary"
+              />
+              <ModalidadCard
+                icon={Layers}
+                titulo="Mixta"
+                descripcion="Combinás presencial y online según tu semana. Perfecta si trabajás, hacés deporte federado o tenés agenda variable."
+                bullets={['Mayor flexibilidad', 'Mismo valor que online', 'Asistencia auto-ajustada']}
+                accent="accent"
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* =========================================================== */}
+        {/* SECCIÓN 5 — METODOLOGÍA / ¿POR QUÉ PREPA?                   */}
+        {/* =========================================================== */}
+        <section id="metodologia" className="py-20 md:py-24 bg-muted/30 border-t">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-14 max-w-2xl mx-auto">
+              <Badge variant="outline" className="mb-3 border-secondary/30 text-secondary">
+                <MapPin className="h-3 w-3 mr-1.5" />
+                ¿Por qué PrePa?
+              </Badge>
+              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
+                Hecho para estudiar en Magallanes
+              </h2>
+              <p className="mt-4 text-muted-foreground text-lg">
+                No es lo mismo prepararse en Santiago que en Punta Arenas. Nuestra metodología
+                está pensada para tu realidad: cercana, local y verificable.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+              {METODOLOGIA_FEATURES.map((f, idx) => {
+                const Icon = f.icon;
+                return (
+                  <motion.div
+                    key={f.titulo}
+                    initial={{ opacity: 0, y: 16 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: '-60px' }}
+                    transition={{ duration: 0.45, delay: idx * 0.04 }}
+                    className="rounded-2xl border bg-card p-6 shadow-sm"
+                  >
+                    <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <h3 className="mt-4 font-semibold text-foreground">{f.titulo}</h3>
+                    <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{f.descripcion}</p>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* =========================================================== */}
+        {/* SECCIÓN 6 — EQUIPO DOCENTE                                   */}
+        {/* =========================================================== */}
+        <section id="equipo" className="py-20 md:py-24">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-3xl mb-14">
+              <Badge variant="outline" className="mb-3">Equipo local</Badge>
+              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
+                Profesores con nombre, cara y CV.
+              </h2>
+              <p className="mt-4 text-muted-foreground text-lg">
+                No es un call center de tutores anónimos. Cada profesor de PrePa publica su universidad de origen y su trayectoria.
+              </p>
+            </div>
+
+            {profesores.length === 0 ? (
+              <div className="p-8 rounded-2xl border bg-card text-center max-w-xl mx-auto">
+                <Users className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground">
+                  Estamos cargando el equipo docente desde el panel admin. Volvé en unos días.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {profesores.map((p) => (
+                  <TeacherCard key={p.id} profesor={p} />
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* =========================================================== */}
+        {/* SECCIÓN 7 — RESULTADOS                                       */}
         {/* =========================================================== */}
         <section id="resultados" className="py-20 md:py-24 border-t bg-muted/30">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -336,80 +536,7 @@ const HomePage = () => {
         </section>
 
         {/* =========================================================== */}
-        {/* SECCIÓN 3 — EQUIPO DOCENTE                                   */}
-        {/* =========================================================== */}
-        <section id="equipo" className="py-20 md:py-24">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-3xl mb-14">
-              <Badge variant="outline" className="mb-3">Equipo local</Badge>
-              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
-                Profesores con nombre, cara y CV.
-              </h2>
-              <p className="mt-4 text-muted-foreground text-lg">
-                No es un call center de tutores anónimos. Cada profesor de PrePa publica su universidad de origen y su trayectoria.
-              </p>
-            </div>
-
-            {profesores.length === 0 ? (
-              <div className="p-8 rounded-2xl border bg-card text-center max-w-xl mx-auto">
-                <Users className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground">
-                  Estamos cargando el equipo docente desde el panel admin. Volvé en unos días.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {profesores.map((p) => (
-                  <TeacherCard key={p.id} profesor={p} />
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* =========================================================== */}
-        {/* SECCIÓN 4 — MODALIDADES                                      */}
-        {/* =========================================================== */}
-        <section id="modalidades" className="py-20 md:py-24 bg-muted/30 border-t">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-14 max-w-2xl mx-auto">
-              <Badge variant="outline" className="mb-3">Adaptado a tu vida</Badge>
-              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
-                Tres formas de prepararte.
-              </h2>
-              <p className="mt-4 text-muted-foreground text-lg">
-                Punta Arenas tiene su propio ritmo. Elegí la modalidad que se adapta al tuyo.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-              <ModalidadCard
-                icon={Users}
-                titulo="Presencial"
-                descripcion="Clases en nuestra sede en Punta Arenas, en grupos chicos de máximo 25 alumnos. Espacio de estudio abierto en horarios extendidos."
-                bullets={['Cara a cara con el profesor', 'Espacio de estudio incluido', 'Grupos chicos']}
-                accent="primary"
-              />
-              <ModalidadCard
-                icon={Laptop}
-                titulo="Online"
-                descripcion="Mismas clases en vivo por Meet o Zoom, todas grabadas. Ideal si vivís en Puerto Natales, Porvenir, Tierra del Fuego o fuera de la región."
-                bullets={['En vivo + grabadas', 'Material descargable', 'Tutorías 1-a-1 incluidas']}
-                accent="secondary"
-              />
-              <ModalidadCard
-                icon={Layers}
-                titulo="Mixta"
-                descripcion="Combinás presencial y online según tu semana. Perfecta si trabajás, hacés deporte federado o tenés agenda variable."
-                bullets={['Mayor flexibilidad', 'Mismo precio que online', 'Asistencia auto-ajustada']}
-                accent="accent"
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* =========================================================== */}
-        {/* SECCIÓN 5 — CALENDARIO PAES                                  */}
+        {/* SECCIÓN 8 — CALENDARIO PAES                                  */}
         {/* =========================================================== */}
         <section id="calendario" className="py-20 md:py-24">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -427,7 +554,7 @@ const HomePage = () => {
         </section>
 
         {/* =========================================================== */}
-        {/* SECCIÓN 6 — TESTIMONIOS                                      */}
+        {/* SECCIÓN 9 — TESTIMONIOS                                      */}
         {/* =========================================================== */}
         <section id="testimonios" className="py-20 md:py-24 bg-muted/30 border-t">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -465,57 +592,9 @@ const HomePage = () => {
         </section>
 
         {/* =========================================================== */}
-        {/* SECCIÓN 7 — POR QUÉ LOCAL                                    */}
+        {/* SECCIÓN 10 — FAQ                                             */}
         {/* =========================================================== */}
-        <section id="por-que-local" className="py-20 md:py-24">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl">
-            <div className="grid lg:grid-cols-12 gap-10 items-center">
-              <div className="lg:col-span-6">
-                <Badge variant="outline" className="mb-3 border-secondary/30 text-secondary">
-                  <MapPin className="h-3 w-3 mr-1.5" />
-                  Magallanes
-                </Badge>
-                <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
-                  Punta Arenas merece un preuniversitario <span className="text-primary">que sepa que vivís acá</span>.
-                </h2>
-                <p className="mt-5 text-muted-foreground text-lg leading-relaxed">
-                  No es lo mismo prepararse en Santiago que en Magallanes. Los horarios, la conectividad, el contexto familiar, los tiempos de viaje a la sede — todo es diferente. PrePa está hecho para esa realidad.
-                </p>
-              </div>
-              <div className="lg:col-span-6">
-                <ul className="space-y-4">
-                  {[
-                    { t: 'Profesores que viven en la región', d: 'No vienen y se van. Están todo el año para responder dudas.' },
-                    { t: 'Horarios compatibles con el clima', d: 'Adaptados a las horas de luz y los días de viento blanco.' },
-                    { t: 'Foco en universidades chilenas', d: 'Conocemos los procesos UC, U. Chile, UMAG, USACH y las pasarelas SUR.' },
-                    { t: 'Resultados auditables', d: 'Cualquier apoderado puede verificar las cifras con DEMRE.' },
-                    { t: 'Sin call center', d: 'Te atiende una persona del equipo. Siempre. Por WhatsApp directo.' },
-                  ].map((b, idx) => (
-                    <motion.li
-                      key={idx}
-                      initial={{ opacity: 0, x: 12 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      viewport={{ once: true, margin: '-60px' }}
-                      transition={{ duration: 0.4, delay: idx * 0.05 }}
-                      className="flex gap-3"
-                    >
-                      <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                      <div>
-                        <p className="font-semibold text-foreground">{b.t}</p>
-                        <p className="text-sm text-muted-foreground mt-0.5">{b.d}</p>
-                      </div>
-                    </motion.li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* =========================================================== */}
-        {/* SECCIÓN 8 — FAQ                                              */}
-        {/* =========================================================== */}
-        <section id="faq" className="py-20 md:py-24 bg-muted/30 border-t">
+        <section id="faq" className="py-20 md:py-24">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-3xl">
             <div className="text-center mb-10">
               <Badge variant="outline" className="mb-3">Preguntas frecuentes</Badge>
@@ -543,17 +622,17 @@ const HomePage = () => {
         </section>
 
         {/* =========================================================== */}
-        {/* SECCIÓN 9 — CTA FINAL                                        */}
+        {/* SECCIÓN 11 — CTA FINAL / CONTACTO                            */}
         {/* =========================================================== */}
-        <section id="contacto" className="py-20 md:py-24 border-t">
+        <section id="contacto" className="py-20 md:py-24 border-t bg-muted/30">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl">
             <div className="grid lg:grid-cols-12 gap-12 items-start">
               <div className="lg:col-span-5">
                 <Badge variant="outline" className="mb-3 bg-accent/10 text-accent border-accent/20">
-                  Cupos limitados
+                  Admisión {anioPromocion} · cupos limitados
                 </Badge>
                 <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
-                  Reservá tu cupo en la promoción {new Date().getFullYear() + 1}
+                  Reservá tu cupo en la promoción {anioPromocion}
                 </h2>
                 <p className="mt-5 text-muted-foreground text-lg">
                   Trabajamos con grupos chicos para mantener la calidad. Dejanos tus datos y nos contactamos en menos de 24 horas hábiles.

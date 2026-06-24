@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Mail, MapPin, MessageCircle, Instagram, Facebook, GraduationCap } from 'lucide-react';
 
 const WHATSAPP_NUMBER = '+56 9 0000 0000'; // editable en el panel admin (PB) o hardcodear cuando esté
@@ -9,10 +9,18 @@ const INSTAGRAM_URL = '#';
 const FACEBOOK_URL = '#';
 
 const Footer = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // El footer aparece en varias páginas (home, clases-gratis, 404). Si no
+  // estamos en el home, navegamos a /#id y el HomePage hace el scroll al
+  // montar; si ya estamos en el home, scrolleamos directo.
   const scrollToSection = (sectionId) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+    if (location.pathname === '/') {
+      const element = document.getElementById(sectionId);
+      if (element) element.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      navigate(`/#${sectionId}`);
     }
   };
 
@@ -70,8 +78,18 @@ const Footer = () => {
             </h3>
             <ul className="space-y-2.5 text-sm">
               <li>
-                <button onClick={() => scrollToSection('hero')} className="text-muted-foreground hover:text-primary transition-colors duration-fast text-left">
+                <button onClick={() => scrollToSection('inicio')} className="text-muted-foreground hover:text-primary transition-colors duration-fast text-left">
                   Inicio
+                </button>
+              </li>
+              <li>
+                <button onClick={() => scrollToSection('programas')} className="text-muted-foreground hover:text-primary transition-colors duration-fast text-left">
+                  Programas
+                </button>
+              </li>
+              <li>
+                <button onClick={() => scrollToSection('modalidades')} className="text-muted-foreground hover:text-primary transition-colors duration-fast text-left">
+                  Modalidades
                 </button>
               </li>
               <li>
@@ -82,11 +100,6 @@ const Footer = () => {
               <li>
                 <button onClick={() => scrollToSection('equipo')} className="text-muted-foreground hover:text-primary transition-colors duration-fast text-left">
                   Equipo docente
-                </button>
-              </li>
-              <li>
-                <button onClick={() => scrollToSection('modalidades')} className="text-muted-foreground hover:text-primary transition-colors duration-fast text-left">
-                  Modalidades
                 </button>
               </li>
               <li>

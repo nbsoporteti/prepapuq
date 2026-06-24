@@ -64,16 +64,19 @@ const Header = () => {
     return '/login';
   };
 
+  // Anclas de la landing institucional. Solo se muestran a visitantes
+  // (no logueados) y solo en el home, donde existen esas secciones.
   const navLinks = [
-    { label: 'Cursos', sectionId: 'cursos' },
-    { label: 'Beneficios', sectionId: 'beneficios' },
-    { label: 'Contacto', sectionId: 'contacto' }
+    { label: 'Programas', sectionId: 'programas' },
+    { label: 'Modalidades', sectionId: 'modalidades' },
+    { label: 'Resultados', sectionId: 'resultados' },
+    { label: 'Equipo', sectionId: 'equipo' },
   ];
 
   // Extracted navigation links to ensure a single source of truth
   const renderNavLinks = (isMobile = false) => {
-    if (!isHomePage) return null;
-    
+    if (!isHomePage || isAuthenticated) return null;
+
     return navLinks.map((link) => (
       <button
         key={link.sectionId}
@@ -106,7 +109,16 @@ const Header = () => {
           <nav className="hidden md:flex items-center gap-8">
             {renderNavLinks(false)}
 
-            {isHomePage && <div className="h-4 w-px bg-border mx-2 hidden lg:block"></div>}
+            {!isAuthenticated && (
+              <Link
+                to="/clases-gratis"
+                className="text-sm font-medium text-foreground/80 transition-colors duration-200 hover:text-primary"
+              >
+                Clases gratis
+              </Link>
+            )}
+
+            {!isAuthenticated && <div className="h-4 w-px bg-border mx-2 hidden lg:block"></div>}
 
             {isAuthenticated ? (
               <div className="flex items-center gap-2">
@@ -189,9 +201,17 @@ const Header = () => {
                 <MessengerSheet open={messengerOpen} onOpenChange={setMessengerOpen} />
               </div>
             ) : (
-              <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                <Link to="/login">Iniciar Sesión</Link>
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button asChild variant="ghost" className="text-foreground/80 hover:text-foreground">
+                  <Link to="/login">Iniciar sesión</Link>
+                </Button>
+                <Button
+                  onClick={() => scrollToSection('contacto')}
+                  className="bg-accent hover:bg-accent/90 text-accent-foreground font-semibold"
+                >
+                  Admisión 2027
+                </Button>
+              </div>
             )}
           </nav>
 
@@ -214,6 +234,16 @@ const Header = () => {
                 </div>
                 
                 {renderNavLinks(true)}
+
+                {!isAuthenticated && (
+                  <Link
+                    to="/clases-gratis"
+                    onClick={() => setIsOpen(false)}
+                    className="text-left text-lg font-medium text-foreground/80 transition-colors hover:text-primary"
+                  >
+                    Clases gratis
+                  </Link>
+                )}
 
                 <div className="h-px bg-border w-full my-2"></div>
 
@@ -251,9 +281,17 @@ const Header = () => {
                     </Button>
                   </div>
                 ) : (
-                  <Button className="w-full" asChild onClick={() => setIsOpen(false)}>
-                    <Link to="/login">Iniciar Sesión</Link>
-                  </Button>
+                  <div className="flex flex-col gap-3">
+                    <Button
+                      className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold"
+                      onClick={() => scrollToSection('contacto')}
+                    >
+                      Admisión 2027
+                    </Button>
+                    <Button variant="outline" className="w-full" asChild onClick={() => setIsOpen(false)}>
+                      <Link to="/login">Iniciar sesión</Link>
+                    </Button>
+                  </div>
                 )}
               </div>
             </SheetContent>
