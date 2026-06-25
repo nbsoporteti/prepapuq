@@ -98,7 +98,6 @@ export function validateTabla(rows, maxCorrectas) {
   return null;
 }
 
-const RE_QUESTION = /^\s*(\d{1,3})\s*[.)]\s+(.*)$/;
 const RE_OPTION = /^\s*(\*?)\s*([A-Ea-e])\s*[).\-]\s+(.*)$/;
 const RE_KEY = /^\s*(?:correcta|clave|respuesta)\s*[:=]\s*([A-Ea-e])\s*$/i;
 const RE_EJE = /^\s*eje\s*[:=]\s*(.+)$/i;
@@ -131,6 +130,28 @@ function splitInlineOptions(line) {
   });
 }
 
+// Número de pregunta con delimitador OPCIONAL: matchea "12.", "12)", "12 texto"
+// y "12" solo. Los folletos DEMRE no siempre ponen el punto y a veces el número
+// queda solo en su línea; por eso la detección real se apoya en la SECUENCIA.
+const RE_QNUM = /^\s*(\d{1,3})\s*([.)])?\s*(.*)$/;
+// Versión laxa para anclar (línea que arranca con un número, con/ sin punto).
+const RE_QSTART = /^\s*\d{1,3}\s*[.)]?(?:\s|$)/;
+
+// ¿La línea idx va seguida, en pocas líneas, de >=2 alternativas? Señal fuerte
+// de que esa línea numerada es una pregunta (y no un número suelto del texto).
+function followedByOptions(lines, idx) {
+  let opts = 0;
+  for (let j = idx + 1; j < Math.min(lines.length, idx + 16); j += 1) {
+    if (RE_OPTION.test(lines[j]) || splitInlineOptions(lines[j])) {
+      opts += 1;
+      if (opts >= 2) return true;
+    } else if (RE_QSTART.test(lines[j])) {
+      return false; // apareció otra línea numerada antes que las alternativas
+    }
+  }
+  return false;
+}
+
 // Convierte el texto pegado en una lista de preguntas estructuradas.
 // Devuelve { questions, textosOrden }.
 export function parsePreguntas(raw) {
@@ -140,6 +161,7 @@ export function parsePreguntas(raw) {
   let collectingEnunciado = false;
   let activeContexto = '';
   let ctxBuffer = null; // líneas acumuladas mientras se lee un bloque "Texto:"
+  let lastNum = null; // último número de pregunta detectado (para la secuencia)
 
   const finishCtx = () => {
     if (ctxBuffer !== null) {
@@ -155,9 +177,34 @@ export function parsePreguntas(raw) {
     collectingEnunciado = false;
   };
 
-  for (const line of lines) {
-    const qMatch = RE_QUESTION.exec(line);
-    const isQuestion = !!qMatch;
+  for (let li = 0; li < lines.length; li += 1) {
+    const line = lines[li];
+
+    // ¿Esta línea ABRE una pregunta nueva? Detección por SECUENCIA: aceptamos el
+    // número con o sin punto (incluso un número solo en su línea) si es el
+    // siguiente esperado (lastNum+1..+3). Eso recupera la numeración DEMRE sin
+    // punto y, a la vez, descarta números sueltos del texto (medidas, años…).
+    let qNum = null;
+    let qRest = '';
+    {
+      const qm = RE_QNUM.exec(line);
+      if (qm) {
+        const num = parseInt(qm[1], 10);
+        const hasDelim = !!qm[2];
+        const rest = (qm[3] || '').trim();
+        const sequential = lastNum != null && num >= lastNum + 1 && num <= lastNum + 3;
+        const classic = hasDelim && rest.length > 0; // formato clásico "1. ¿…?"
+        let accept = false;
+        if (lastNum == null) accept = classic || followedByOptions(lines, li); // ancla la 1ª
+        else if (sequential) accept = true; // la secuencia manda
+        else if (classic && num > lastNum + 3 && followedByOptions(lines, li)) accept = true; // re-sync
+        if (accept) {
+          qNum = num;
+          qRest = rest;
+        }
+      }
+    }
+    const isQuestion = qNum != null;
     const isCtxStart = !isQuestion && RE_CTX.test(line);
     const isSep = RE_SEP.test(line);
 
@@ -187,8 +234,8 @@ export function parsePreguntas(raw) {
       finishCtx();
       pushCurrent();
       current = {
-        numeroRaw: parseInt(qMatch[1], 10),
-        enunciado: (qMatch[2] || '').trim(),
+        numeroRaw: qNum,
+        enunciado: qRest,
         alternativas: [],
         correcta: null,
         eje: '',
@@ -197,6 +244,7 @@ export function parsePreguntas(raw) {
         explicacion: '',
         contexto: activeContexto,
       };
+      lastNum = qNum;
       collectingEnunciado = true;
       continue;
     }
@@ -285,17 +333,11 @@ export function splitPreambulo(raw) {
   const lines = String(raw || '').replace(/\r\n?/g, '\n').split('\n');
   let startIdx = -1;
   for (let i = 0; i < lines.length; i += 1) {
-    if (!RE_QUESTION.test(lines[i])) continue;
-    let opts = 0;
-    for (let j = i + 1; j < Math.min(lines.length, i + 16); j += 1) {
-      if (RE_OPTION.test(lines[j])) {
-        opts += 1;
-        if (opts >= 2) break;
-      } else if (RE_QUESTION.test(lines[j])) {
-        break; // apareció otra pregunta antes que las alternativas → no era
-      }
-    }
-    if (opts >= 2) {
+    // Primera línea que arranca con un número (con o SIN punto) y va seguida, en
+    // pocas líneas, de >=2 alternativas. Las instrucciones de la portada también
+    // están numeradas, pero NO tienen alternativas, así que no disparan acá.
+    if (!RE_QSTART.test(lines[i])) continue;
+    if (followedByOptions(lines, i)) {
       startIdx = i;
       break;
     }
