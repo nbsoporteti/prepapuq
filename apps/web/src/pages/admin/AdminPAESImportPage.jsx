@@ -4,6 +4,7 @@ import { Helmet } from 'react-helmet';
 import {
   ArrowLeft,
   FileUp,
+  FileText,
   Plus,
   Trash2,
   ChevronUp,
@@ -58,6 +59,7 @@ import {
   tablaConversionRef,
   validateTabla,
 } from '@/lib/paesImport';
+import { extractPdfText } from '@/lib/pdfText';
 
 const hoyISO = () => new Date().toISOString().slice(0, 10);
 
@@ -121,6 +123,8 @@ const AdminPAESImportPage = () => {
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState('');
   const [pasteReplace, setPasteReplace] = useState(true);
+  const pdfInputRef = useRef(null);
+  const [pdfBusy, setPdfBusy] = useState(false);
 
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
@@ -309,6 +313,32 @@ const AdminPAESImportPage = () => {
     setPasteText('');
     setView('editar');
     toast.success(`${nuevos.length} pregunta${nuevos.length === 1 ? '' : 's'} cargada${nuevos.length === 1 ? '' : 's'} al editor.`);
+  };
+
+  // --- Importar desde PDF: extrae el texto y lo vuelca al editor de texto ---
+  const handlePdf = async (file) => {
+    if (!file) return;
+    if (file.type && file.type !== 'application/pdf') {
+      toast.error('El archivo no es un PDF.');
+      return;
+    }
+    setPdfBusy(true);
+    try {
+      const text = await extractPdfText(file);
+      if (!text.trim()) {
+        toast.error('No se extrajo texto del PDF. ¿Es escaneado o son imágenes? En ese caso, pegá el texto a mano.');
+        return;
+      }
+      setPasteText(text);
+      setPasteReplace(true);
+      setPasteOpen(true);
+      toast.success('Texto extraído del PDF. Revisalo, marcá las correctas y cargá al editor.');
+    } catch (err) {
+      console.error('Error extrayendo el PDF:', err);
+      toast.error('No se pudo leer el PDF.');
+    } finally {
+      setPdfBusy(false);
+    }
   };
 
   // --- Guardar --------------------------------------------------------------
@@ -741,6 +771,21 @@ const AdminPAESImportPage = () => {
               ) : (
                 <Badge className="border-0 bg-success/15 font-mono text-success">OK</Badge>
               )}
+              <input
+                ref={pdfInputRef}
+                type="file"
+                accept="application/pdf"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handlePdf(f);
+                  e.target.value = '';
+                }}
+              />
+              <Button variant="outline" size="sm" onClick={() => pdfInputRef.current?.click()} disabled={pdfBusy}>
+                {pdfBusy ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <FileText className="mr-1.5 h-4 w-4" />}
+                Importar desde PDF
+              </Button>
               <Button variant="outline" size="sm" onClick={() => setPasteOpen(true)}>
                 <ClipboardPaste className="mr-1.5 h-4 w-4" />
                 Importar desde texto
@@ -842,6 +887,11 @@ const AdminPAESImportPage = () => {
             <div className="rounded-lg border bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground">
               <pre className="whitespace-pre-wrap font-sans">{FORMATO_AYUDA}</pre>
             </div>
+            <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              Si el texto vino de un PDF puede traer cortes raros: revisá la numeración y las alternativas. El PDF de
+              preguntas no trae la clave — marcá la correcta con <code className="font-mono">*</code> (o después en el editor).
+            </p>
             <Textarea
               value={pasteText}
               onChange={(e) => setPasteText(e.target.value)}
