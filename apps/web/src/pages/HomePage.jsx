@@ -734,7 +734,7 @@ const HomePage = () => {
                   size="lg"
                   variant="outline"
                   onClick={() => scrollToSection('programas')}
-                  className="rounded-full border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white text-base px-8"
+                  className="rounded-full border-white/40 !bg-transparent !text-white hover:!bg-white/10 text-base px-8"
                 >
                   Ver los programas
                 </Button>
