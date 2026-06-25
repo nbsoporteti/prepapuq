@@ -245,7 +245,7 @@ const HomePage = () => {
                   <MapPin className="h-3 w-3" />
                   Punta Arenas · Magallanes
                 </span>
-                <h1 className="mt-5 font-display text-display-2xl font-bold text-balance text-foreground">
+                <h1 className="mt-5 font-editorial text-display-2xl font-bold text-balance text-foreground">
                   El preuniversitario PAES de Magallanes que te conoce por <span className="text-primary">nombre</span>.
                 </h1>
                 <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
@@ -360,7 +360,7 @@ const HomePage = () => {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-14 max-w-2xl mx-auto">
               <Badge variant="outline" className="mb-3">Adaptado a tu vida</Badge>
-              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
+              <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance">
                 Tres formas de prepararte.
               </h2>
               <p className="mt-4 text-muted-foreground text-lg">
@@ -404,7 +404,7 @@ const HomePage = () => {
                 <MapPin className="h-3 w-3 mr-1.5" />
                 ¿Por qué PrePa?
               </Badge>
-              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
+              <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance">
                 Hecho para estudiar en Magallanes
               </h2>
               <p className="mt-4 text-muted-foreground text-lg">
@@ -444,7 +444,7 @@ const HomePage = () => {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl mb-14">
               <Badge variant="outline" className="mb-3">Equipo local</Badge>
-              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
+              <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance">
                 Profesores con nombre, cara y CV.
               </h2>
               <p className="mt-4 text-muted-foreground text-lg">
@@ -476,7 +476,7 @@ const HomePage = () => {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-14 max-w-2xl mx-auto">
               <Badge variant="outline" className="mb-3">Resultados verificables</Badge>
-              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
+              <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance">
                 Lo que logran nuestros estudiantes
               </h2>
               <p className="mt-4 text-muted-foreground text-lg">
@@ -540,7 +540,7 @@ const HomePage = () => {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-14 max-w-2xl mx-auto">
               <Badge variant="outline" className="mb-3">Tu hoja de ruta</Badge>
-              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
+              <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance">
                 Calendario PAES {new Date().getFullYear()}
               </h2>
               <p className="mt-4 text-muted-foreground text-lg">
@@ -558,7 +558,7 @@ const HomePage = () => {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-14 max-w-2xl mx-auto">
               <Badge variant="outline" className="mb-3">Voces de exalumnos</Badge>
-              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
+              <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance">
                 Ya están donde querían llegar.
               </h2>
             </div>
@@ -596,7 +596,7 @@ const HomePage = () => {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-3xl">
             <div className="text-center mb-10">
               <Badge variant="outline" className="mb-3">Preguntas frecuentes</Badge>
-              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
+              <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance">
                 Lo que más nos preguntan
               </h2>
             </div>
@@ -629,7 +629,7 @@ const HomePage = () => {
                 <Badge variant="outline" className="mb-3 bg-accent/10 text-accent border-accent/20">
                   Admisión {anioPromocion} · cupos limitados
                 </Badge>
-                <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
+                <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance">
                   Reservá tu cupo en la promoción {anioPromocion}
                 </h2>
                 <p className="mt-5 text-muted-foreground text-lg">
@@ -669,7 +669,7 @@ const HomePage = () => {
         <section className="bg-slate-900 text-white">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
             <div className="mx-auto max-w-3xl text-center">
-              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance text-white">
+              <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance text-white">
                 No dejes tu PAES para último momento.
               </h2>
               <p className="mt-4 text-lg text-slate-300">

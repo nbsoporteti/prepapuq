@@ -158,7 +158,7 @@ const ProgramasSection = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14 max-w-2xl mx-auto">
           <Badge variant="outline" className="mb-3">Admisión 2027</Badge>
-          <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
+          <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance">
             Un programa para cada etapa
           </h2>
           <p className="mt-4 text-muted-foreground text-lg">

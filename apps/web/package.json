@@ -11,6 +11,7 @@
     "lint:warn": "eslint ."
   },
   "dependencies": {
+    "@fontsource/fraunces": "^5.2.9",
     "@fontsource/inter": "^5.2.8",
     "@fontsource/jetbrains-mono": "^5.2.8",
     "@hookform/resolvers": "^5.4.0",

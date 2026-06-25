@@ -19,7 +19,8 @@ module.exports = {
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
         mono: ['JetBrains Mono', 'ui-monospace', 'SF Mono', 'Menlo', 'monospace'],
-        display: ['Inter', 'system-ui', 'sans-serif'], // Fraunces se agrega en Fase 1
+        display: ['Inter', 'system-ui', 'sans-serif'],
+        editorial: ['Fraunces', 'Georgia', 'Cambria', 'serif'], // serif display para titulares del landing
       },
       fontSize: {
         // tamaños custom para hero/stats con clamp responsivo
