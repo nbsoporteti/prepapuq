@@ -99,11 +99,11 @@ const Header = () => {
             className="flex items-center transition-opacity duration-200 hover:opacity-80"
           >
             <img
-              src="/logo.webp"
+              src="/logo-mark.webp"
               alt="PrePa — Prepara tu futuro"
               className="h-14 w-auto shrink-0"
-              width="44"
-              height="44"
+              width="417"
+              height="273"
             />
           </Link>
 
@@ -229,11 +229,11 @@ const Header = () => {
               <div className="flex flex-col gap-6 mt-8">
                 <div className="flex items-center mb-4">
                   <img
-                    src="/logo.webp"
+                    src="/logo-mark.webp"
                     alt="PrePa — Prepara tu futuro"
                     className="h-14 w-auto shrink-0"
-                    width="44"
-                    height="44"
+                    width="417"
+                    height="273"
                   />
                 </div>
                 
