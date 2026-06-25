@@ -32,6 +32,7 @@ import { AuthProvider } from '@/contexts/AuthContext.jsx';
 import { PizarraProvider } from '@/contexts/PizarraContext.jsx';
 import Header from '@/components/Header.jsx';
 import PizarraPanel from '@/components/pizarra/PizarraPanel.jsx';
+import ChatAsistente from '@/components/asistente/ChatAsistente.jsx';
 
 function App() {
   return (
@@ -42,6 +43,7 @@ function App() {
         <div className="flex flex-col min-h-screen">
           <Header />
           <PizarraPanel />
+          <ChatAsistente />
           <main className="flex-1">
             <Routes>
               <Route path="/" element={<HomePage />} />
