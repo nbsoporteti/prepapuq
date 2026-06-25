@@ -108,6 +108,29 @@ const RE_PILOTO = /^\s*piloto\s*$/i;
 const RE_CTX = /^\s*(?:texto|contexto)\s*[:=]?\s*(.*)$/i;
 const RE_SEP = /^\s*[-=]{3,}\s*$/;
 
+// Detecta una FILA de alternativas en una sola línea ("A) 12  B) 15  C) 18 …"),
+// típica de respuestas cortas en los folletos DEMRE. Solo divide si las letras
+// van en secuencia A, B, C… desde el inicio de la línea (señal fuerte de que es
+// una fila de alternativas y no prosa). Devuelve [{letra, star, texto}] o null.
+const RE_INLINE_OPT = /(\*?)\s*([A-Ea-e])\s*[).\-]\s+/g;
+function splitInlineOptions(line) {
+  RE_INLINE_OPT.lastIndex = 0;
+  const marks = [];
+  let m;
+  while ((m = RE_INLINE_OPT.exec(line)) !== null) {
+    marks.push({ start: m.index, end: RE_INLINE_OPT.lastIndex, star: m[1] === '*', letra: m[2].toUpperCase() });
+  }
+  if (marks.length < 2) return null;
+  if (line.slice(0, marks[0].start).trim() !== '') return null; // debe arrancar en la 1ª alternativa
+  for (let i = 0; i < marks.length; i += 1) {
+    if (marks[i].letra !== LETTERS[i]) return null; // exige A, B, C… en orden
+  }
+  return marks.map((mk, i) => {
+    const stop = i + 1 < marks.length ? marks[i + 1].start : line.length;
+    return { letra: mk.letra, star: mk.star, texto: line.slice(mk.end, stop).trim() };
+  });
+}
+
 // Convierte el texto pegado en una lista de preguntas estructuradas.
 // Devuelve { questions, textosOrden }.
 export function parsePreguntas(raw) {
@@ -180,6 +203,17 @@ export function parsePreguntas(raw) {
 
     // A esta altura ya no estamos dentro de un bloque de texto.
     if (ctxBuffer !== null) finishCtx();
+
+    // Fila de alternativas en una sola línea ("A) … B) … C) …").
+    const inlineOpts = current ? splitInlineOptions(line) : null;
+    if (inlineOpts) {
+      collectingEnunciado = false;
+      for (const o of inlineOpts) {
+        current.alternativas.push({ letra: o.letra, texto: o.texto });
+        if (o.star) current.correcta = o.letra;
+      }
+      continue;
+    }
 
     const optM = RE_OPTION.exec(line);
     if (optM && current) {
