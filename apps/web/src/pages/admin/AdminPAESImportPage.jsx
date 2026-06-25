@@ -116,6 +116,7 @@ const AdminPAESImportPage = () => {
   });
   const [items, setItems] = useState(() => [newItem()]);
   const [view, setView] = useState('editar'); // editar | previa
+  const [soloProblemas, setSoloProblemas] = useState(false);
   const [tablaMode, setTablaMode] = useState('ref'); // ref | custom
   const [tablaText, setTablaText] = useState('');
   const [showTabla, setShowTabla] = useState(false);
@@ -810,9 +811,19 @@ const AdminPAESImportPage = () => {
                 </Badge>
               )}
               {itemErrors.length > 0 ? (
-                <Badge variant="destructive" className="font-mono">
+                <button
+                  type="button"
+                  onClick={() => setSoloProblemas((v) => !v)}
+                  title="Mostrar solo las preguntas con problemas"
+                  className={`inline-flex items-center gap-1 rounded-md px-2 py-1 font-mono text-xs font-semibold transition-colors ${
+                    soloProblemas
+                      ? 'bg-destructive text-destructive-foreground'
+                      : 'bg-destructive/10 text-destructive hover:bg-destructive/20'
+                  }`}
+                >
+                  <AlertTriangle className="h-3 w-3" />
                   {itemErrors.length} a revisar
-                </Badge>
+                </button>
               ) : (
                 <Badge className="border-0 bg-success/15 font-mono text-success">OK</Badge>
               )}
@@ -845,32 +856,55 @@ const AdminPAESImportPage = () => {
           {/* Cuerpo: editor o vista previa */}
           {view === 'editar' ? (
             <div className="space-y-4">
-              {items.map((it, i) => (
-                <QuestionEditor
-                  key={it._id}
-                  item={it}
-                  index={i}
-                  total={items.length}
-                  errors={errorsByIdx[i] || []}
-                  onPatch={(patch) => patchItem(i, patch)}
-                  onRemove={() => removeItem(i)}
-                  onMove={(dir) => moveItem(i, dir)}
-                  onDuplicate={() => duplicateItem(i)}
-                  onAltPatch={(j, patch) => patchAlt(i, j, patch)}
-                  onAltAdd={() => addAlt(i)}
-                  onAltRemove={(j) => removeAlt(i, j)}
-                  onAltMove={(j, dir) => moveAlt(i, j, dir)}
-                  onSetCorrect={(j) => setCorrect(i, j)}
-                  onImg={(slot, file) => setImg(i, slot, file)}
-                  onImgClear={(slot) => clearImg(i, slot)}
-                  onCopyContexto={() => copyContextoFromPrev(i)}
-                />
-              ))}
+              {soloProblemas && itemErrors.length > 0 && (
+                <div className="flex items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-2.5 text-sm">
+                  <span className="flex items-center gap-1.5 font-medium text-destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    Mostrando solo las {itemErrors.length} preguntas con problemas.
+                  </span>
+                  <Button variant="ghost" size="sm" onClick={() => setSoloProblemas(false)}>
+                    Ver todas
+                  </Button>
+                </div>
+              )}
 
-              <Button variant="outline" className="w-full border-dashed py-6" onClick={addItem}>
-                <Plus className="mr-2 h-4 w-4" />
-                Agregar pregunta
-              </Button>
+              {items
+                .map((it, i) => ({ it, i }))
+                .filter(({ i }) => !soloProblemas || (errorsByIdx[i] && errorsByIdx[i].length))
+                .map(({ it, i }) => (
+                  <QuestionEditor
+                    key={it._id}
+                    item={it}
+                    index={i}
+                    total={items.length}
+                    errors={errorsByIdx[i] || []}
+                    onPatch={(patch) => patchItem(i, patch)}
+                    onRemove={() => removeItem(i)}
+                    onMove={(dir) => moveItem(i, dir)}
+                    onDuplicate={() => duplicateItem(i)}
+                    onAltPatch={(j, patch) => patchAlt(i, j, patch)}
+                    onAltAdd={() => addAlt(i)}
+                    onAltRemove={(j) => removeAlt(i, j)}
+                    onAltMove={(j, dir) => moveAlt(i, j, dir)}
+                    onSetCorrect={(j) => setCorrect(i, j)}
+                    onImg={(slot, file) => setImg(i, slot, file)}
+                    onImgClear={(slot) => clearImg(i, slot)}
+                    onCopyContexto={() => copyContextoFromPrev(i)}
+                  />
+                ))}
+
+              {soloProblemas && itemErrors.length === 0 ? (
+                <div className="rounded-xl border border-success/30 bg-success/5 p-6 text-center text-sm font-medium text-success">
+                  ¡Listo! No quedan preguntas con problemas. Ya podés guardar.
+                </div>
+              ) : (
+                !soloProblemas && (
+                  <Button variant="outline" className="w-full border-dashed py-6" onClick={addItem}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Agregar pregunta
+                  </Button>
+                )
+              )}
             </div>
           ) : (
             <PreviewEnsayo items={items} />
