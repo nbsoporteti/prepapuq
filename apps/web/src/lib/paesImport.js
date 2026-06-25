@@ -274,6 +274,31 @@ export function splitPreambulo(raw) {
   };
 }
 
+// Parsea una "clave de respuestas" (la que DEMRE publica aparte del folleto) a
+// un mapa { numeroDePregunta: "A".."E" }. Acepta varios formatos:
+//   - pares número→letra: "1: A", "1. A", "1)A", "1 A", "1-A", "12 D 13 C"…
+//   - secuencia de letras en orden (posicional): "A C B D" o "ACBD" → q1, q2, …
+// Devuelve { mode, map }. mode: 'numbered' | 'positional' | 'empty'.
+export function parseClave(raw) {
+  const text = String(raw || '');
+  const map = {};
+
+  // 1) Pares número→letra (lo más confiable: requiere el número de pregunta).
+  const pairRe = /(\d{1,3})\s*[.)\-:=]?\s*([A-Ea-e])(?![A-Za-z])/g;
+  let m;
+  let pairs = 0;
+  while ((m = pairRe.exec(text)) !== null) {
+    map[parseInt(m[1], 10)] = m[2].toUpperCase();
+    pairs += 1;
+  }
+  if (pairs > 0) return { mode: 'numbered', map };
+
+  // 2) Posicional: cada letra A–E suelta, en orden, es la respuesta de q1, q2, …
+  const letters = (text.match(/[A-Ea-e]/g) || []).map((l) => l.toUpperCase());
+  letters.forEach((l, i) => { map[i + 1] = l; });
+  return { mode: letters.length ? 'positional' : 'empty', map };
+}
+
 // Valida la lista de preguntas. Devuelve un array de issues { level, q?, msg }.
 // Si hay algún issue de nivel 'error' la importación queda bloqueada.
 export function validatePreguntas(questions) {

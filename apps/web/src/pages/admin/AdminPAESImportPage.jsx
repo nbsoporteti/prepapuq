@@ -23,6 +23,7 @@ import {
   Info,
   ShieldAlert,
   ClipboardPaste,
+  ListChecks,
   Calculator,
   Sigma,
 } from 'lucide-react';
@@ -53,6 +54,7 @@ import {
   EJES_POR_ASIGNATURA,
   EJEMPLO_PEGADO,
   LETTERS,
+  parseClave,
   parsePreguntas,
   parseTabla,
   serializeTabla,
@@ -126,6 +128,8 @@ const AdminPAESImportPage = () => {
   const [pasteReplace, setPasteReplace] = useState(true);
   const pdfInputRef = useRef(null);
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [claveOpen, setClaveOpen] = useState(false);
+  const [claveText, setClaveText] = useState('');
 
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
@@ -314,6 +318,40 @@ const AdminPAESImportPage = () => {
     setPasteText('');
     setView('editar');
     toast.success(`${nuevos.length} pregunta${nuevos.length === 1 ? '' : 's'} cargada${nuevos.length === 1 ? '' : 's'} al editor.`);
+  };
+
+  // --- Cargar clave de respuestas: marca solas las correctas en cada pregunta ---
+  const clavePreview = useMemo(
+    () => (claveOpen ? parseClave(claveText) : { mode: 'empty', map: {} }),
+    [claveOpen, claveText],
+  );
+  const claveCount = Object.keys(clavePreview.map).length;
+  const aplicarClave = () => {
+    const { map } = parseClave(claveText);
+    if (!Object.keys(map).length) {
+      toast.error('No se detectaron respuestas en la clave.');
+      return;
+    }
+    let aplicadas = 0;
+    let fuera = 0;
+    const next = items.map((it, idx) => {
+      const letra = map[idx + 1];
+      if (!letra) return it;
+      const k = LETTERS.indexOf(letra);
+      if (k < 0 || k >= it.alternativas.length) {
+        fuera += 1;
+        return it;
+      }
+      aplicadas += 1;
+      return { ...it, alternativas: it.alternativas.map((a, j) => ({ ...a, correct: j === k })) };
+    });
+    setItems(next);
+    setClaveOpen(false);
+    setView('editar');
+    toast.success(
+      `${aplicadas} respuesta${aplicadas === 1 ? '' : 's'} marcada${aplicadas === 1 ? '' : 's'}.` +
+        (fuera ? ` ${fuera} con letra fuera de rango (revisalas).` : ' Revisá cada una.'),
+    );
   };
 
   // --- Importar desde PDF: extrae el texto y lo vuelca al editor de texto ---
@@ -797,6 +835,10 @@ const AdminPAESImportPage = () => {
                 <ClipboardPaste className="mr-1.5 h-4 w-4" />
                 Importar desde texto
               </Button>
+              <Button variant="outline" size="sm" onClick={() => setClaveOpen(true)}>
+                <ListChecks className="mr-1.5 h-4 w-4" />
+                Cargar respuestas
+              </Button>
             </div>
           </div>
 
@@ -935,6 +977,56 @@ const AdminPAESImportPage = () => {
             <Button onClick={aplicarPaste} disabled={!pastePreview.questions.length}>
               <ClipboardPaste className="mr-2 h-4 w-4" />
               Cargar al editor
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo: cargar clave de respuestas (marca las correctas) */}
+      <Dialog open={claveOpen} onOpenChange={setClaveOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Cargar clave de respuestas</DialogTitle>
+            <DialogDescription>
+              Pegá la clave y se marcan solas las alternativas correctas de cada pregunta. Después las revisás una por una.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div className="rounded-lg border bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground">
+              <div>Formatos aceptados:</div>
+              <div className="mt-1">
+                • Número y letra: <code className="font-mono">1: A 2: C 3: D…</code> (o <code className="font-mono">1A 2C 3D</code>)
+              </div>
+              <div>
+                • Solo letras en orden: <code className="font-mono">A C D B A…</code> (la 1ª = pregunta 1)
+              </div>
+            </div>
+            <Textarea
+              value={claveText}
+              onChange={(e) => setClaveText(e.target.value)}
+              spellCheck={false}
+              placeholder={'1: A\n2: C\n3: D\n…   (o   A C D B …)'}
+              className="min-h-[160px] font-mono text-sm text-foreground"
+            />
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-muted-foreground">
+                {claveCount} respuesta{claveCount === 1 ? '' : 's'} detectada{claveCount === 1 ? '' : 's'}
+                {claveCount > items.length ? ` · hay ${items.length} pregunta${items.length === 1 ? '' : 's'} en el editor` : ''}
+              </span>
+              <Button variant="ghost" size="sm" onClick={() => setClaveText('')} disabled={!claveText}>
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setClaveOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={aplicarClave} disabled={!claveCount}>
+              <ListChecks className="mr-2 h-4 w-4" />
+              Marcar correctas
             </Button>
           </DialogFooter>
         </DialogContent>
