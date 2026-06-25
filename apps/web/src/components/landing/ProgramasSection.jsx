@@ -14,7 +14,6 @@ import {
   Landmark,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 
 const scrollToContacto = () => {
   const el = document.getElementById('contacto');
@@ -157,7 +156,7 @@ const ProgramasSection = () => {
     <section id="programas" className="py-20 md:py-24 bg-muted/30 border-t">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14 max-w-2xl mx-auto">
-          <Badge variant="outline" className="mb-3">Admisión 2027</Badge>
+          <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary">Admisión 2027</p>
           <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance">
             Un programa para cada etapa
           </h2>

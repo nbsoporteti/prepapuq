@@ -22,7 +22,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
 import {
   Carousel,
   CarouselContent,
@@ -220,20 +219,6 @@ const HomePage = () => {
           className="relative overflow-hidden border-b bg-gradient-to-b from-secondary-soft/50 via-background to-background"
         >
           <div className="container relative mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
-            {/* barra de admisión */}
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="mb-8 inline-flex items-center gap-2 rounded-full border bg-card px-4 py-1.5 text-sm shadow-sm"
-            >
-              <span className="h-2 w-2 rounded-full bg-success" aria-hidden="true" />
-              <span className="text-muted-foreground">
-                <strong className="font-semibold text-foreground">Admisión 2027 abierta</strong>
-                <span className="hidden sm:inline"> · cupos por grupo limitados</span>
-              </span>
-            </motion.div>
-
             <div className="grid lg:grid-cols-12 gap-10 lg:gap-14 items-center">
               <motion.div
                 initial={{ opacity: 0, y: 24 }}
@@ -241,11 +226,7 @@ const HomePage = () => {
                 transition={{ duration: 0.6, ease: [0.2, 0.8, 0.2, 1] }}
                 className="lg:col-span-7"
               >
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-secondary/30 bg-secondary/5 px-3 py-1 text-xs font-medium text-secondary">
-                  <MapPin className="h-3 w-3" />
-                  Punta Arenas · Magallanes
-                </span>
-                <h1 className="mt-5 font-editorial text-display-2xl font-bold text-balance text-foreground">
+                <h1 className="font-editorial text-display-2xl font-bold text-balance text-foreground">
                   El preuniversitario PAES de Magallanes que te conoce por <span className="text-primary">nombre</span>.
                 </h1>
                 <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
@@ -359,7 +340,7 @@ const HomePage = () => {
         <section id="modalidades" className="py-20 md:py-24">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-14 max-w-2xl mx-auto">
-              <Badge variant="outline" className="mb-3">Adaptado a tu vida</Badge>
+              <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary">Adaptado a tu vida</p>
               <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance">
                 Tres formas de prepararte.
               </h2>
@@ -400,10 +381,7 @@ const HomePage = () => {
         <section id="metodologia" className="py-20 md:py-24 bg-muted/30 border-t">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-14 max-w-2xl mx-auto">
-              <Badge variant="outline" className="mb-3 border-secondary/30 text-secondary">
-                <MapPin className="h-3 w-3 mr-1.5" />
-                ¿Por qué PrePa?
-              </Badge>
+              <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary">¿Por qué PrePa?</p>
               <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance">
                 Hecho para estudiar en Magallanes
               </h2>
@@ -443,7 +421,7 @@ const HomePage = () => {
         <section id="equipo" className="py-20 md:py-24">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl mb-14">
-              <Badge variant="outline" className="mb-3">Equipo local</Badge>
+              <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary">Equipo local</p>
               <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance">
                 Profesores con nombre, cara y CV.
               </h2>
@@ -475,7 +453,7 @@ const HomePage = () => {
         <section id="resultados" className="py-20 md:py-24 border-t bg-muted/30">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-14 max-w-2xl mx-auto">
-              <Badge variant="outline" className="mb-3">Resultados verificables</Badge>
+              <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary">Resultados verificables</p>
               <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance">
                 Lo que logran nuestros estudiantes
               </h2>
@@ -539,7 +517,7 @@ const HomePage = () => {
         <section id="calendario" className="py-20 md:py-24">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-14 max-w-2xl mx-auto">
-              <Badge variant="outline" className="mb-3">Tu hoja de ruta</Badge>
+              <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary">Tu hoja de ruta</p>
               <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance">
                 Calendario PAES {new Date().getFullYear()}
               </h2>
@@ -557,7 +535,7 @@ const HomePage = () => {
         <section id="testimonios" className="py-20 md:py-24 bg-muted/30 border-t">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-14 max-w-2xl mx-auto">
-              <Badge variant="outline" className="mb-3">Voces de exalumnos</Badge>
+              <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary">Voces de exalumnos</p>
               <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance">
                 Ya están donde querían llegar.
               </h2>
@@ -595,7 +573,7 @@ const HomePage = () => {
         <section id="faq" className="py-20 md:py-24">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-3xl">
             <div className="text-center mb-10">
-              <Badge variant="outline" className="mb-3">Preguntas frecuentes</Badge>
+              <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary">Preguntas frecuentes</p>
               <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance">
                 Lo que más nos preguntan
               </h2>
@@ -626,9 +604,9 @@ const HomePage = () => {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl">
             <div className="grid lg:grid-cols-12 gap-12 items-start">
               <div className="lg:col-span-5">
-                <Badge variant="outline" className="mb-3 bg-accent/10 text-accent border-accent/20">
+                <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-accent">
                   Admisión {anioPromocion} · cupos limitados
-                </Badge>
+                </p>
                 <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance">
                   Reservá tu cupo en la promoción {anioPromocion}
                 </h2>
