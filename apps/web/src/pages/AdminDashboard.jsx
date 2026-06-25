@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
-import { BookOpen, FolderOpen, Users, Trash2, Plus, AlertCircle, CalendarCheck, GraduationCap, Pencil, FileUp, LayoutDashboard, UserCog } from 'lucide-react';
+import { BookOpen, FolderOpen, Users, Trash2, Plus, AlertCircle, CalendarCheck, GraduationCap, Pencil, FileUp, LayoutDashboard, UserCog, Archive, ArchiveRestore } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -54,6 +54,10 @@ const AdminDashboard = () => {
 
   // Derived Array of enrolled student IDs from the fetched asignaciones
   const enrolledStudentIds = asignaciones.map(a => String(a.user_id));
+
+  // Cursos visibles vs archivados (soft-delete: "archivar" en vez de borrar).
+  const cursosActivos = cursos.filter((c) => !c.archivado);
+  const cursosArchivados = cursos.filter((c) => c.archivado);
 
   // Helper function to check if student is already enrolled (UI level)
   const isStudentAlreadyEnrolled = (studentId) => {
@@ -127,16 +131,28 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleDeleteCourse = async (id) => {
-    if (!window.confirm('¿Estás seguro de eliminar este curso? Esta acción no se puede deshacer.')) return;
+  // "Eliminar" = archivar (soft-delete). Borrar de verdad falla porque el curso
+  // está referenciado por relaciones obligatorias (secciones, matrículas, etc.).
+  const handleArchiveCourse = async (id) => {
+    if (!window.confirm('¿Archivar este curso? Se oculta de la gestión pero no se borra; podés restaurarlo cuando quieras.')) return;
     try {
-      await pb.collection('cursos').delete(id, { $autoCancel: false });
-      toast.success('Curso eliminado');
+      await pb.collection('cursos').update(id, { archivado: true }, { $autoCancel: false });
+      toast.success('Curso archivado');
       fetchCursos();
       if (selectedCourseForMaterial === id) setSelectedCourseForMaterial('');
       if (selectedCourseForAssign === id) setSelectedCourseForAssign('');
     } catch (err) {
-      toast.error('Error al eliminar curso');
+      toast.error('No se pudo archivar el curso: ' + (err?.message || 'error desconocido'));
+    }
+  };
+
+  const handleRestoreCourse = async (id) => {
+    try {
+      await pb.collection('cursos').update(id, { archivado: false }, { $autoCancel: false });
+      toast.success('Curso restaurado');
+      fetchCursos();
+    } catch (err) {
+      toast.error('No se pudo restaurar el curso: ' + (err?.message || 'error desconocido'));
     }
   };
 
@@ -408,28 +424,50 @@ const AdminDashboard = () => {
                 </Card>
 
                 <div className="lg:col-span-2">
-                  <h3 className="text-xl font-semibold mb-4">Cursos Activos ({cursos.length})</h3>
-                  {cursos.length === 0 ? (
+                  <h3 className="text-xl font-semibold mb-4">Cursos Activos ({cursosActivos.length})</h3>
+                  {cursosActivos.length === 0 ? (
                     <div className="flex flex-col items-center justify-center p-12 border rounded-2xl bg-card text-center shadow-sm">
                       <BookOpen className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                      <p className="text-muted-foreground font-medium">No hay cursos registrados</p>
+                      <p className="text-muted-foreground font-medium">No hay cursos activos</p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {cursos.map(curso => (
+                      {cursosActivos.map(curso => (
                         <div key={curso.id} className="relative group">
                           <CourseCard course={curso} />
                           <Button
-                            variant="destructive"
+                            variant="secondary"
                             size="icon"
                             className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-sm"
-                            onClick={() => handleDeleteCourse(curso.id)}
-                            title="Eliminar curso"
+                            onClick={() => handleArchiveCourse(curso.id)}
+                            title="Archivar curso"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Archive className="h-4 w-4" />
                           </Button>
                         </div>
                       ))}
+                    </div>
+                  )}
+
+                  {cursosArchivados.length > 0 && (
+                    <div className="mt-8">
+                      <h4 className="text-sm font-semibold text-muted-foreground mb-3">
+                        Archivados ({cursosArchivados.length})
+                      </h4>
+                      <div className="space-y-2">
+                        {cursosArchivados.map(curso => (
+                          <div
+                            key={curso.id}
+                            className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 px-4 py-2.5"
+                          >
+                            <span className="min-w-0 truncate text-sm font-medium text-foreground">{curso.nombre}</span>
+                            <Button variant="outline" size="sm" onClick={() => handleRestoreCourse(curso.id)}>
+                              <ArchiveRestore className="mr-1.5 h-4 w-4" />
+                              Restaurar
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -451,7 +489,7 @@ const AdminDashboard = () => {
                             <SelectValue placeholder="Selecciona un curso..." />
                           </SelectTrigger>
                           <SelectContent>
-                            {cursos.map(c => (
+                            {cursosActivos.map(c => (
                               <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
                             ))}
                           </SelectContent>
@@ -547,7 +585,7 @@ const AdminDashboard = () => {
                             <SelectValue placeholder="Selecciona un curso..." />
                           </SelectTrigger>
                           <SelectContent>
-                            {cursos.map(c => (
+                            {cursosActivos.map(c => (
                               <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
                             ))}
                           </SelectContent>
