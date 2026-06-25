@@ -26,6 +26,7 @@ import NotificacionesPage from './pages/NotificacionesPage.jsx';
 import AnunciosPage from './pages/AnunciosPage.jsx';
 import PerfilGeneral from './pages/PerfilGeneral.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
+import ManualPage from './pages/ManualPage.jsx';
 import ProtectedRoute from '@/components/ProtectedRoute.jsx';
 import { AuthProvider } from '@/contexts/AuthContext.jsx';
 import { PizarraProvider } from '@/contexts/PizarraContext.jsx';
@@ -90,6 +91,15 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={["admin", "profesor"]}>
                     <AdminPAESImportPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/manual"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "profesor"]}>
+                    <ManualPage />
                   </ProtectedRoute>
                 }
               />

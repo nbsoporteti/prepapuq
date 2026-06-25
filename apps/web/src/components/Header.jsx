@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, LogOut, LayoutDashboard, MessageCircle, User, PenLine, Library } from 'lucide-react';
+import { Menu, LogOut, LayoutDashboard, MessageCircle, User, PenLine, Library, BookOpen } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,6 +35,9 @@ const Header = () => {
   const { toggle: togglePizarra } = usePizarra();
 
   const isHomePage = location.pathname === '/';
+  const canManual = [rolActivo, currentUser?.rol, ...(rolesEffective || [])].some(
+    (r) => r === 'admin' || r === 'profesor',
+  );
 
   const scrollToSection = (sectionId) => {
     if (isHomePage) {
@@ -192,6 +195,14 @@ const Header = () => {
                         Biblioteca PAES
                       </Link>
                     </DropdownMenuItem>
+                    {canManual && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/manual">
+                          <BookOpen className="h-4 w-4 mr-2" />
+                          Manual de uso
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onSelect={handleLogout} className="text-destructive">
                       <LogOut className="h-4 w-4 mr-2" />
