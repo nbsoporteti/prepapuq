@@ -56,6 +56,7 @@ import {
   parsePreguntas,
   parseTabla,
   serializeTabla,
+  splitPreambulo,
   tablaConversionRef,
   validateTabla,
 } from '@/lib/paesImport';
@@ -329,10 +330,16 @@ const AdminPAESImportPage = () => {
         toast.error('No se extrajo texto del PDF. ¿Es escaneado o son imágenes? En ese caso, pegá el texto a mano.');
         return;
       }
-      setPasteText(text);
+      const { preambulo, cuerpo } = splitPreambulo(text);
+      if (preambulo && !meta.instrucciones.trim()) setMetaField('instrucciones', preambulo);
+      setPasteText(cuerpo || text);
       setPasteReplace(true);
       setPasteOpen(true);
-      toast.success('Texto extraído del PDF. Revisalo, marcá las correctas y cargá al editor.');
+      toast.success(
+        preambulo
+          ? 'Portada de instrucciones movida al campo “Instrucciones”. Revisá las preguntas y marcá las correctas.'
+          : 'Texto extraído del PDF. Revisalo, marcá las correctas y cargá al editor.',
+      );
     } catch (err) {
       console.error('Error extrayendo el PDF:', err);
       toast.error('No se pudo leer el PDF.');

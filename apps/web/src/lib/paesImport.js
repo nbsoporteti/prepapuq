@@ -239,6 +239,41 @@ export function parsePreguntas(raw) {
   return { questions, textosOrden };
 }
 
+// Separa el preámbulo (portada de instrucciones de un PDF oficial) del cuerpo
+// de preguntas. Lo usa el importador desde PDF: la portada va al campo
+// "Instrucciones" y el resto al parser de preguntas.
+//
+// Heurística: en estas pruebas las instrucciones de la portada vienen
+// numeradas (1., 2., …) PERO sin alternativas; una pregunta real es una línea
+// numerada seguida, en pocas líneas, de >=2 alternativas (A) B) …). El cuerpo
+// arranca en la primera pregunta así detectada; todo lo anterior es preámbulo.
+export function splitPreambulo(raw) {
+  const lines = String(raw || '').replace(/\r\n?/g, '\n').split('\n');
+  let startIdx = -1;
+  for (let i = 0; i < lines.length; i += 1) {
+    if (!RE_QUESTION.test(lines[i])) continue;
+    let opts = 0;
+    for (let j = i + 1; j < Math.min(lines.length, i + 16); j += 1) {
+      if (RE_OPTION.test(lines[j])) {
+        opts += 1;
+        if (opts >= 2) break;
+      } else if (RE_QUESTION.test(lines[j])) {
+        break; // apareció otra pregunta antes que las alternativas → no era
+      }
+    }
+    if (opts >= 2) {
+      startIdx = i;
+      break;
+    }
+  }
+  // Sin preámbulo detectable (el PDF arranca directo en preguntas) → todo cuerpo.
+  if (startIdx <= 0) return { preambulo: '', cuerpo: String(raw || '').trim() };
+  return {
+    preambulo: lines.slice(0, startIdx).join('\n').trim(),
+    cuerpo: lines.slice(startIdx).join('\n').trim(),
+  };
+}
+
 // Valida la lista de preguntas. Devuelve un array de issues { level, q?, msg }.
 // Si hay algún issue de nivel 'error' la importación queda bloqueada.
 export function validatePreguntas(questions) {
