@@ -209,7 +209,7 @@ const Header = () => {
                 </Button>
                 <Button
                   onClick={() => scrollToSection('contacto')}
-                  className="bg-accent hover:bg-accent/90 text-accent-foreground font-semibold"
+                  className="rounded-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold"
                 >
                   Admisión 2027
                 </Button>
@@ -287,7 +287,7 @@ const Header = () => {
                 ) : (
                   <div className="flex flex-col gap-3">
                     <Button
-                      className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold"
+                      className="w-full rounded-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold"
                       onClick={() => scrollToSection('contacto')}
                     >
                       Admisión 2027

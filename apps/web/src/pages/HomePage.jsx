@@ -245,7 +245,7 @@ const HomePage = () => {
                   <MapPin className="h-3 w-3" />
                   Punta Arenas · Magallanes
                 </span>
-                <h1 className="mt-5 font-display text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-balance leading-[1.05] text-foreground">
+                <h1 className="mt-5 font-display text-display-2xl font-bold text-balance text-foreground">
                   El preuniversitario PAES de Magallanes que te conoce por <span className="text-primary">nombre</span>.
                 </h1>
                 <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
@@ -257,7 +257,7 @@ const HomePage = () => {
                   <Button
                     size="lg"
                     onClick={() => scrollToSection('programas')}
-                    className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold text-base px-7"
+                    className="rounded-full bg-accent text-accent-foreground hover:bg-accent/90 font-semibold text-base px-8"
                   >
                     Conocer los programas
                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -266,7 +266,7 @@ const HomePage = () => {
                     asChild
                     variant="outline"
                     size="lg"
-                    className="text-base px-7"
+                    className="rounded-full text-base px-8"
                   >
                     <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
                       <MessageCircle className="mr-2 h-4 w-4 text-success" />
@@ -297,43 +297,87 @@ const HomePage = () => {
                 transition={{ duration: 0.6, delay: 0.15, ease: [0.2, 0.8, 0.2, 1] }}
                 className="lg:col-span-5"
               >
-                <div className="rounded-3xl border bg-card shadow-lg p-8 md:p-10">
-                  <img
-                    src="/logo.webp"
-                    alt="PrePa — Prepara tu futuro"
-                    className="mx-auto h-28 w-auto"
-                    width="224"
-                    height="224"
-                  />
+                {/* Vista de la plataforma — preview de la PAES interactiva real */}
+                <div className="rounded-2xl border bg-card shadow-lg overflow-hidden">
+                  <div className="flex items-center gap-2 border-b bg-muted/40 px-4 py-2.5">
+                    <img src="/logo.webp" alt="PrePa" className="h-5 w-auto" width="20" height="20" />
+                    <span className="ml-1 text-xs font-medium text-muted-foreground">Ensayo PAES · Matemática M1</span>
+                    <span className="ml-auto flex gap-1" aria-hidden="true">
+                      <span className="h-2 w-2 rounded-full bg-border" />
+                      <span className="h-2 w-2 rounded-full bg-border" />
+                      <span className="h-2 w-2 rounded-full bg-border" />
+                    </span>
+                  </div>
+                  <div className="p-5 md:p-6">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium text-foreground">Pregunta 12 / 65</span>
+                      <span className="inline-flex items-center gap-1.5 font-mono tabular-nums text-secondary">
+                        <Clock className="h-3.5 w-3.5" />
+                        01:12:40
+                      </span>
+                    </div>
+                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                      <div className="h-full rounded-full bg-secondary" style={{ width: '18%' }} />
+                    </div>
 
-                  <div className="mt-8 grid grid-cols-3 gap-2 text-center">
+                    <div className="mt-5 space-y-2.5">
+                      {[{ n: 10, sel: 2 }, { n: 11, sel: 4 }, { n: 12, sel: null }].map((row) => (
+                        <div key={row.n} className="flex items-center gap-3">
+                          <span className="w-6 text-right font-mono text-xs tabular-nums text-muted-foreground">{row.n}</span>
+                          <div className="flex gap-1.5">
+                            {['A', 'B', 'C', 'D', 'E'].map((opt, i) => (
+                              <span
+                                key={opt}
+                                className={`inline-flex h-6 w-6 items-center justify-center rounded-full border text-[11px] font-medium ${
+                                  row.sel === i
+                                    ? 'border-primary bg-primary text-primary-foreground'
+                                    : 'border-border text-muted-foreground'
+                                }`}
+                              >
+                                {opt}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mt-5 flex items-center gap-2 rounded-xl bg-primary-soft px-3.5 py-2.5 text-sm">
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
+                      <span className="text-foreground/80">Corrección al instante, con percentil y puntaje proyectado.</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* cifras estructurales verdaderas + puntaje real si existe */}
+                <div className="mt-4 rounded-2xl border bg-card shadow-sm p-5">
+                  <div className="grid grid-cols-3 gap-2 text-center">
                     <div>
-                      <p className="font-mono text-2xl md:text-3xl font-bold tabular-nums text-primary">5</p>
+                      <p className="font-mono text-2xl font-bold tabular-nums text-primary">5</p>
                       <p className="mt-1 text-xs text-muted-foreground leading-tight">pruebas PAES</p>
                     </div>
                     <div className="border-x">
-                      <p className="font-mono text-2xl md:text-3xl font-bold tabular-nums text-secondary">≤25</p>
+                      <p className="font-mono text-2xl font-bold tabular-nums text-secondary">≤25</p>
                       <p className="mt-1 text-xs text-muted-foreground leading-tight">por grupo</p>
                     </div>
                     <div>
-                      <p className="font-mono text-2xl md:text-3xl font-bold tabular-nums text-foreground">3</p>
+                      <p className="font-mono text-2xl font-bold tabular-nums text-foreground">3</p>
                       <p className="mt-1 text-xs text-muted-foreground leading-tight">modalidades</p>
                     </div>
                   </div>
-
                   {resultados?.puntaje_promedio_general ? (
-                    <div className="mt-7 pt-6 border-t text-center">
+                    <div className="mt-4 pt-4 border-t text-center">
                       <p className="text-xs uppercase tracking-wider text-muted-foreground">
                         Puntaje PAES promedio · Promoción {resultados.anio_promocion}
                       </p>
-                      <p className="mt-1 font-mono text-4xl font-bold tabular-nums text-foreground">
+                      <p className="mt-1 font-mono text-3xl font-bold tabular-nums text-foreground">
                         {Math.round(resultados.puntaje_promedio_general)}
                         <span className="text-base font-normal text-muted-foreground ml-1">/ 1000</span>
                       </p>
                     </div>
                   ) : (
-                    <p className="mt-7 pt-6 border-t text-center text-sm text-muted-foreground">
-                      Preuniversitario PAES en Punta Arenas, Magallanes
+                    <p className="mt-4 pt-4 border-t text-center text-xs text-muted-foreground">
+                      Preuniversitario PAES · Punta Arenas, Magallanes
                     </p>
                   )}
                 </div>
@@ -396,7 +440,7 @@ const HomePage = () => {
         {/* =========================================================== */}
         {/* SECCIÓN 5 — METODOLOGÍA / ¿POR QUÉ PREPA?                   */}
         {/* =========================================================== */}
-        <section id="metodologia" className="py-20 md:py-24 bg-muted/30 border-t">
+        <section id="metodologia" className="py-20 md:py-24 bg-primary-soft border-t">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-14 max-w-2xl mx-auto">
               <Badge variant="outline" className="mb-3 border-secondary/30 text-secondary">
@@ -471,7 +515,7 @@ const HomePage = () => {
         {/* =========================================================== */}
         {/* SECCIÓN 7 — RESULTADOS                                       */}
         {/* =========================================================== */}
-        <section id="resultados" className="py-20 md:py-24 border-t bg-muted/30">
+        <section id="resultados" className="py-20 md:py-24 border-t bg-secondary-soft">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-14 max-w-2xl mx-auto">
               <Badge variant="outline" className="mb-3">Resultados verificables</Badge>
@@ -553,7 +597,7 @@ const HomePage = () => {
         {/* =========================================================== */}
         {/* SECCIÓN 9 — TESTIMONIOS                                      */}
         {/* =========================================================== */}
-        <section id="testimonios" className="py-20 md:py-24 bg-muted/30 border-t">
+        <section id="testimonios" className="py-20 md:py-24 bg-primary-soft border-t">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-14 max-w-2xl mx-auto">
               <Badge variant="outline" className="mb-3">Voces de exalumnos</Badge>
@@ -621,7 +665,7 @@ const HomePage = () => {
         {/* =========================================================== */}
         {/* SECCIÓN 11 — CTA FINAL / CONTACTO                            */}
         {/* =========================================================== */}
-        <section id="contacto" className="py-20 md:py-24 border-t bg-muted/30">
+        <section id="contacto" className="py-20 md:py-24 border-t bg-secondary-soft">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl">
             <div className="grid lg:grid-cols-12 gap-12 items-start">
               <div className="lg:col-span-5">
@@ -644,7 +688,7 @@ const HomePage = () => {
                   </p>
                   <Button
                     asChild
-                    className="mt-4 w-full bg-success text-success-foreground hover:bg-success/90"
+                    className="mt-4 w-full rounded-full bg-success text-success-foreground hover:bg-success/90"
                   >
                     <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
                       <MessageCircle className="mr-2 h-4 w-4" />
@@ -657,6 +701,43 @@ const HomePage = () => {
                 <div className="rounded-3xl border bg-card shadow-sm p-6 md:p-8">
                   <ContactForm />
                 </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* =========================================================== */}
+        {/* SECCIÓN 12 — BANDA CTA FINAL (navy, estilo Calendly)        */}
+        {/* =========================================================== */}
+        <section className="bg-slate-900 text-white">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
+            <div className="mx-auto max-w-3xl text-center">
+              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance text-white">
+                No dejes tu PAES para último momento.
+              </h2>
+              <p className="mt-4 text-lg text-slate-300">
+                La preparación que empieza antes rinde más. Sumate a la promoción {anioPromocion} y
+                armá tu plan con el equipo.
+              </p>
+              <div className="mt-8 flex flex-col sm:flex-row justify-center gap-3">
+                <Button
+                  asChild
+                  size="lg"
+                  className="rounded-full bg-success text-success-foreground hover:bg-success/90 font-semibold text-base px-8"
+                >
+                  <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    Hablar por WhatsApp
+                  </a>
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={() => scrollToSection('programas')}
+                  className="rounded-full border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white text-base px-8"
+                >
+                  Ver los programas
+                </Button>
               </div>
             </div>
           </div>

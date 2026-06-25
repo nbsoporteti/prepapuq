@@ -133,7 +133,7 @@ const ProgramaCard = ({ plan }) => {
 
       <Button
         onClick={scrollToContacto}
-        className={`mt-6 w-full font-semibold ${
+        className={`mt-6 w-full rounded-full font-semibold ${
           plan.destacado
             ? 'bg-accent text-accent-foreground hover:bg-accent/90'
             : ''
@@ -154,7 +154,7 @@ const ProgramaCard = ({ plan }) => {
  */
 const ProgramasSection = () => {
   return (
-    <section id="programas" className="py-20 md:py-24 bg-muted/30 border-t">
+    <section id="programas" className="py-20 md:py-24 bg-secondary-soft border-t">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14 max-w-2xl mx-auto">
           <Badge variant="outline" className="mb-3">Admisión 2027</Badge>
