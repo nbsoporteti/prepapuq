@@ -227,8 +227,10 @@ const HomePage = () => {
             width="1920"
             height="1280"
           />
+          {/* Scrim de legibilidad: capa base pareja + refuerzo a la izquierda (texto). */}
+          <div className="absolute inset-0 bg-slate-950/55" aria-hidden="true" />
           <div
-            className="absolute inset-0 bg-gradient-to-r from-slate-950/92 via-slate-950/72 to-slate-950/45"
+            className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-950/45 to-slate-950/10"
             aria-hidden="true"
           />
           <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
