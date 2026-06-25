@@ -9,6 +9,8 @@ import {
   Trash2,
   ChevronUp,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Copy,
   Image as ImageIcon,
   X,
@@ -26,6 +28,7 @@ import {
   ListChecks,
   Calculator,
   Sigma,
+  Crop,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -62,7 +65,7 @@ import {
   tablaConversionRef,
   validateTabla,
 } from '@/lib/paesImport';
-import { extractPdfText } from '@/lib/pdfText';
+import { loadPdf, extractTextFromDoc, renderPdfPage } from '@/lib/pdfText';
 
 const hoyISO = () => new Date().toISOString().slice(0, 10);
 
@@ -131,6 +134,17 @@ const AdminPAESImportPage = () => {
   const [pdfBusy, setPdfBusy] = useState(false);
   const [claveOpen, setClaveOpen] = useState(false);
   const [claveText, setClaveText] = useState('');
+  const pdfDocRef = useRef(null); // documento pdf.js vivo, para recortar figuras
+  const [pdfPages, setPdfPages] = useState(0);
+  const [crop, setCrop] = useState({ open: false, target: null }); // target: { i, slot }
+
+  // Cerrar el documento PDF al desmontar (libera memoria del worker).
+  useEffect(() => () => {
+    if (pdfDocRef.current) {
+      try { pdfDocRef.current.destroy(); } catch (_e) { /* noop */ }
+      pdfDocRef.current = null;
+    }
+  }, []);
 
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
@@ -277,6 +291,21 @@ const AdminPAESImportPage = () => {
         return { ...it, alternativas: it.alternativas.map((a, k) => (k === slot ? { ...a, img: null } : a)) };
       }),
     );
+
+  // Recorte de figuras del PDF: abre el modal apuntando a un slot de imagen.
+  const openCrop = (i, slot) => {
+    if (!pdfDocRef.current) {
+      toast.error('Primero importá un PDF (botón “Importar desde PDF”) para recortar figuras.');
+      return;
+    }
+    setCrop({ open: true, target: { i, slot } });
+  };
+  const applyCrop = (file) => {
+    if (crop.target) setImg(crop.target.i, crop.target.slot, file);
+    setCrop({ open: false, target: null });
+    toast.success('Figura recortada y agregada a la pregunta.');
+  };
+
   const addItem = () => setItems((p) => [...p, newItem()]);
   const removeItem = (i) => setItems((p) => (p.length <= 1 ? [newItem()] : p.filter((_, idx) => idx !== i)));
   const moveItem = (i, dir) =>
@@ -364,11 +393,23 @@ const AdminPAESImportPage = () => {
     }
     setPdfBusy(true);
     try {
-      const text = await extractPdfText(file);
+      // Cerrar el PDF anterior si lo había.
+      if (pdfDocRef.current) {
+        try { pdfDocRef.current.destroy(); } catch (_e) { /* noop */ }
+        pdfDocRef.current = null;
+        setPdfPages(0);
+      }
+      const doc = await loadPdf(file);
+      const text = await extractTextFromDoc(doc);
       if (!text.trim()) {
+        try { doc.destroy(); } catch (_e) { /* noop */ }
         toast.error('No se extrajo texto del PDF. ¿Es escaneado o son imágenes? En ese caso, pegá el texto a mano.');
         return;
       }
+      // Dejamos el documento abierto para recortar figuras de sus páginas.
+      pdfDocRef.current = doc;
+      setPdfPages(doc.numPages);
+
       const { preambulo, cuerpo } = splitPreambulo(text);
       if (preambulo && !meta.instrucciones.trim()) setMetaField('instrucciones', preambulo);
       setPasteText(cuerpo || text);
@@ -376,8 +417,8 @@ const AdminPAESImportPage = () => {
       setPasteOpen(true);
       toast.success(
         preambulo
-          ? 'Portada de instrucciones movida al campo “Instrucciones”. Revisá las preguntas y marcá las correctas.'
-          : 'Texto extraído del PDF. Revisalo, marcá las correctas y cargá al editor.',
+          ? 'Portada movida a “Instrucciones”. Revisá las preguntas, marcá las correctas y, para las figuras, usá “Del PDF”.'
+          : 'Texto extraído del PDF. Revisalo, marcá las correctas y, para las figuras, usá el botón “Del PDF”.',
       );
     } catch (err) {
       console.error('Error extrayendo el PDF:', err);
@@ -434,6 +475,7 @@ const AdminPAESImportPage = () => {
         } else if (rec && rec[field]) fd.append(field, ''); // limpiar el que había
       };
 
+      let imgFieldsMissing = false; // backend sin los campos imagen_* → descarta imágenes
       for (let i = 0; i < items.length; i += 1) {
         const it = items[i];
         const numero = i + 1;
@@ -461,8 +503,18 @@ const AdminPAESImportPage = () => {
           applyImg(fd, `imagen_${LETTERS[j].toLowerCase()}`, ref, rec);
         }
 
-        if (rec) await pb.collection('preguntas_paes').update(rec.id, fd, { $autoCancel: false });
-        else await pb.collection('preguntas_paes').create(fd, { $autoCancel: false });
+        const sentImg = [
+          ['imagen_enunciado', it.imgEnunciado],
+          ['imagen_contexto', it.imgContexto],
+          ...it.alternativas.slice(0, 5).map((a, j) => [`imagen_${LETTERS[j].toLowerCase()}`, a.img]),
+        ]
+          .filter(([, ref]) => ref && ref.kind === 'file')
+          .map(([field]) => field);
+
+        const saved = rec
+          ? await pb.collection('preguntas_paes').update(rec.id, fd, { $autoCancel: false })
+          : await pb.collection('preguntas_paes').create(fd, { $autoCancel: false });
+        if (sentImg.some((field) => !saved[field])) imgFieldsMissing = true;
         setProgress({ done: i + 1, total: n });
       }
 
@@ -472,6 +524,12 @@ const AdminPAESImportPage = () => {
       }
 
       toast.success(`Simulacro guardado con ${n} preguntas.`);
+      if (imgFieldsMissing) {
+        toast.warning(
+          'Las preguntas se guardaron, pero el servidor descartó las imágenes: el PocketBase desplegado no tiene los campos de imagen. Hay que redeployar el backend (migración 1781100170_extend_preguntas_paes_rich).',
+          { duration: 15000 },
+        );
+      }
       setDone({ n, estado: meta.estado, simId: sim.id, titulo: sim.titulo });
       window.scrollTo({ top: 0 });
     } catch (err) {
@@ -890,6 +948,8 @@ const AdminPAESImportPage = () => {
                     onImg={(slot, file) => setImg(i, slot, file)}
                     onImgClear={(slot) => clearImg(i, slot)}
                     onCopyContexto={() => copyContextoFromPrev(i)}
+                    pdfReady={!!pdfPages}
+                    onPickFromPdf={(slot) => openCrop(i, slot)}
                   />
                 ))}
 
@@ -1065,6 +1125,25 @@ const AdminPAESImportPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PdfCropModal
+        open={crop.open}
+        pdfDoc={pdfDocRef.current}
+        totalPages={pdfPages}
+        title={
+          crop.target
+            ? `Recortar figura · Pregunta ${crop.target.i + 1}${
+                crop.target.slot === 'enunciado'
+                  ? ' (enunciado)'
+                  : crop.target.slot === 'contexto'
+                    ? ' (texto de lectura)'
+                    : ` (alternativa ${LETTERS[crop.target.slot] || ''})`
+              }`
+            : 'Recortar figura del PDF'
+        }
+        onClose={() => setCrop({ open: false, target: null })}
+        onConfirm={applyCrop}
+      />
     </>
   );
 };
@@ -1133,8 +1212,157 @@ function validateItems(items) {
   return out;
 }
 
+// === Subcomponente: recortar una figura del PDF =============================
+const loadImage = (src) =>
+  new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+
+const PdfCropModal = ({ open, pdfDoc, totalPages, title, onClose, onConfirm }) => {
+  const [pageNum, setPageNum] = useState(1);
+  const [page, setPage] = useState(null); // { dataUrl, width, height }
+  const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [sel, setSel] = useState(null); // { x, y, w, h } en fracciones 0..1
+  const dragRef = useRef(null);
+  const boxRef = useRef(null);
+
+  useEffect(() => {
+    if (open) {
+      setPageNum(1);
+      setSel(null);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || !pdfDoc) return undefined;
+    let alive = true;
+    setLoading(true);
+    setSel(null);
+    setPage(null);
+    renderPdfPage(pdfDoc, pageNum, 2)
+      .then((p) => { if (alive) setPage(p); })
+      .catch(() => { if (alive) toast.error('No se pudo renderizar la página.'); })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, [open, pdfDoc, pageNum]);
+
+  const fracFromEvent = (e) => {
+    const r = boxRef.current.getBoundingClientRect();
+    return {
+      x: Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)),
+      y: Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)),
+    };
+  };
+  const onPointerDown = (e) => {
+    if (!page) return;
+    e.preventDefault();
+    const p = fracFromEvent(e);
+    dragRef.current = p;
+    setSel({ x: p.x, y: p.y, w: 0, h: 0 });
+    boxRef.current.setPointerCapture?.(e.pointerId);
+  };
+  const onPointerMove = (e) => {
+    if (!dragRef.current) return;
+    const p = fracFromEvent(e);
+    const s = dragRef.current;
+    setSel({ x: Math.min(s.x, p.x), y: Math.min(s.y, p.y), w: Math.abs(p.x - s.x), h: Math.abs(p.y - s.y) });
+  };
+  const onPointerUp = (e) => {
+    dragRef.current = null;
+    boxRef.current?.releasePointerCapture?.(e.pointerId);
+  };
+
+  const confirm = async () => {
+    if (!page || !sel || sel.w < 0.02 || sel.h < 0.02) {
+      toast.error('Dibujá un rectángulo sobre la figura primero.');
+      return;
+    }
+    setBusy(true);
+    try {
+      const img = await loadImage(page.dataUrl);
+      const sx = Math.round(sel.x * page.width);
+      const sy = Math.round(sel.y * page.height);
+      const sw = Math.max(1, Math.round(sel.w * page.width));
+      const sh = Math.max(1, Math.round(sel.h * page.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = sw;
+      canvas.height = sh;
+      canvas.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+      const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
+      if (!blob) throw new Error('crop');
+      onConfirm(new File([blob], `figura-p${pageNum}.png`, { type: 'image/png' }));
+    } catch (_e) {
+      toast.error('No se pudo recortar la imagen.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle className="text-base">{title}</DialogTitle>
+          <DialogDescription>
+            Arrastrá con el mouse para marcar la figura; cambiá de página si hace falta y tocá “Recortar y usar”.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex items-center justify-between gap-2">
+          <Button type="button" variant="outline" size="sm" disabled={pageNum <= 1 || loading} onClick={() => setPageNum((p) => Math.max(1, p - 1))}>
+            <ChevronLeft className="mr-1 h-4 w-4" /> Anterior
+          </Button>
+          <span className="text-sm text-muted-foreground">Página {pageNum} de {totalPages || '—'}</span>
+          <Button type="button" variant="outline" size="sm" disabled={pageNum >= totalPages || loading} onClick={() => setPageNum((p) => Math.min(totalPages, p + 1))}>
+            Siguiente <ChevronRight className="ml-1 h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="max-h-[58vh] overflow-auto rounded-lg border bg-muted/30 p-1">
+          <div
+            ref={boxRef}
+            className="relative mx-auto w-full cursor-crosshair select-none"
+            style={{ touchAction: 'none' }}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+          >
+            {loading || !page ? (
+              <div className="flex h-64 items-center justify-center text-muted-foreground">
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Renderizando página…
+              </div>
+            ) : (
+              <>
+                <img src={page.dataUrl} alt="" className="block w-full" draggable={false} />
+                {sel && sel.w > 0 && sel.h > 0 && (
+                  <div
+                    className="pointer-events-none absolute border-2 border-primary bg-primary/20"
+                    style={{ left: `${sel.x * 100}%`, top: `${sel.y * 100}%`, width: `${sel.w * 100}%`, height: `${sel.h * 100}%` }}
+                  />
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button type="button" onClick={confirm} disabled={busy || loading || !sel}>
+            {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Crop className="mr-2 h-4 w-4" />}
+            Recortar y usar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 // === Subcomponente: input de imagen =========================================
-const ImageInput = ({ value, onPick, onClear, label = 'Imagen', size = 'h-16' }) => {
+const ImageInput = ({ value, onPick, onClear, onFromPdf, label = 'Imagen', size = 'h-16' }) => {
   const inputRef = useRef(null);
   return (
     <div className="flex items-center gap-2">
@@ -1162,10 +1390,18 @@ const ImageInput = ({ value, onPick, onClear, label = 'Imagen', size = 'h-16' })
           </button>
         </div>
       ) : (
-        <Button type="button" variant="outline" size="sm" className="h-8" onClick={() => inputRef.current?.click()}>
-          <ImageIcon className="mr-1.5 h-3.5 w-3.5" />
-          {label}
-        </Button>
+        <>
+          <Button type="button" variant="outline" size="sm" className="h-8" onClick={() => inputRef.current?.click()}>
+            <ImageIcon className="mr-1.5 h-3.5 w-3.5" />
+            {label}
+          </Button>
+          {onFromPdf && (
+            <Button type="button" variant="ghost" size="sm" className="h-8 text-primary" onClick={onFromPdf} title="Recortar la figura desde el PDF importado">
+              <Crop className="mr-1.5 h-3.5 w-3.5" />
+              Del PDF
+            </Button>
+          )}
+        </>
       )}
     </div>
   );
@@ -1189,6 +1425,8 @@ const QuestionEditor = ({
   onImg,
   onImgClear,
   onCopyContexto,
+  pdfReady,
+  onPickFromPdf,
 }) => {
   const [showCtx, setShowCtx] = useState(!!(item.contexto || item.imgContexto));
   const hasErr = errors.length > 0;
@@ -1279,6 +1517,7 @@ const QuestionEditor = ({
                 value={item.imgContexto}
                 onPick={(f) => onImg('contexto', f)}
                 onClear={() => onImgClear('contexto')}
+                onFromPdf={pdfReady ? () => onPickFromPdf('contexto') : undefined}
                 label="Imagen del texto"
               />
             </div>
@@ -1307,7 +1546,7 @@ const QuestionEditor = ({
             placeholder="Escribí la pregunta. Para fórmulas usá LaTeX entre $…$, ej: ¿cuánto vale $x^2 + 1$?"
             className="min-h-[64px] text-foreground"
           />
-          <ImageInput value={item.imgEnunciado} onPick={(f) => onImg('enunciado', f)} onClear={() => onImgClear('enunciado')} label="Imagen del enunciado" />
+          <ImageInput value={item.imgEnunciado} onPick={(f) => onImg('enunciado', f)} onClear={() => onImgClear('enunciado')} onFromPdf={pdfReady ? () => onPickFromPdf('enunciado') : undefined} label="Imagen del enunciado" />
         </div>
 
         {/* Eje + dificultad */}
@@ -1367,7 +1606,7 @@ const QuestionEditor = ({
                     placeholder={`Texto de la alternativa ${letra}`}
                     className="text-foreground"
                   />
-                  <ImageInput value={alt.img} onPick={(f) => onImg(j, f)} onClear={() => onImgClear(j)} label="Imagen" size="h-12" />
+                  <ImageInput value={alt.img} onPick={(f) => onImg(j, f)} onClear={() => onImgClear(j)} onFromPdf={pdfReady ? () => onPickFromPdf(j) : undefined} label="Imagen" size="h-12" />
                 </div>
                 <div className="flex flex-col">
                   <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => onAltMove(j, -1)} disabled={j === 0} title="Subir">

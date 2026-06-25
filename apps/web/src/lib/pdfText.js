@@ -173,26 +173,52 @@ function stripBoilerplate(pages) {
   });
 }
 
-// Extrae el texto de un File/Blob PDF. onProgress(pagina, total) es opcional.
-export async function extractPdfText(file, { onProgress } = {}) {
+// Abre un PDF y devuelve el documento pdf.js. El llamador es responsable de
+// destruirlo (doc.destroy()). Permite extraer el texto Y renderizar páginas
+// (para recortar figuras) sin volver a abrir el archivo.
+export async function loadPdf(file) {
   const pdfjs = await getPdfjs();
   const data = await file.arrayBuffer();
-  const pdf = await pdfjs.getDocument({ data }).promise;
+  return pdfjs.getDocument({ data }).promise;
+}
+
+// Extrae el texto de un documento ya abierto. onProgress(pagina, total) opcional.
+export async function extractTextFromDoc(pdf, { onProgress } = {}) {
+  const pages = [];
+  for (let p = 1; p <= pdf.numPages; p += 1) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const viewport = page.getViewport({ scale: 1 });
+    pages.push(pageToText(content.items, viewport.width));
+    page.cleanup?.();
+    onProgress?.(p, pdf.numPages);
+  }
+  return stripBoilerplate(pages)
+    .join('\n\n')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+// Renderiza una página a PNG (dataURL) para recortar figuras. scale 2 ≈ nítido.
+// Devuelve { dataUrl, width, height } en píxeles del canvas renderizado.
+export async function renderPdfPage(pdf, pageNum, scale = 2) {
+  const page = await pdf.getPage(pageNum);
+  const viewport = page.getViewport({ scale });
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.ceil(viewport.width);
+  canvas.height = Math.ceil(viewport.height);
+  const ctx = canvas.getContext('2d');
+  await page.render({ canvasContext: ctx, viewport }).promise;
+  page.cleanup?.();
+  return { dataUrl: canvas.toDataURL('image/png'), width: canvas.width, height: canvas.height };
+}
+
+// Extrae el texto de un File/Blob PDF (abre y cierra el documento).
+export async function extractPdfText(file, { onProgress } = {}) {
+  const pdf = await loadPdf(file);
   try {
-    const pages = [];
-    for (let p = 1; p <= pdf.numPages; p += 1) {
-      const page = await pdf.getPage(p);
-      const content = await page.getTextContent();
-      const viewport = page.getViewport({ scale: 1 });
-      pages.push(pageToText(content.items, viewport.width));
-      page.cleanup?.();
-      onProgress?.(p, pdf.numPages);
-    }
-    return stripBoilerplate(pages)
-      .join('\n\n')
-      .replace(/[ \t]+\n/g, '\n')
-      .replace(/\n{3,}/g, '\n\n')
-      .trim();
+    return await extractTextFromDoc(pdf, { onProgress });
   } finally {
     if (typeof pdf.destroy === 'function') pdf.destroy();
   }
