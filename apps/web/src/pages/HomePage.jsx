@@ -216,9 +216,22 @@ const HomePage = () => {
         {/* =========================================================== */}
         <section
           id="inicio"
-          className="relative overflow-hidden border-b bg-gradient-to-b from-secondary-soft/50 via-background to-background"
+          className="relative overflow-hidden border-b bg-slate-950"
         >
-          <div className="container relative mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+          {/* Fondo: foto real de Punta Arenas y el Estrecho de Magallanes (Unsplash,
+              licencia libre). Swappable por una foto propia en /hero-puntaarenas.webp */}
+          <img
+            src="/hero-puntaarenas.webp"
+            alt="Vista de Punta Arenas y el Estrecho de Magallanes"
+            className="absolute inset-0 h-full w-full object-cover object-center"
+            width="1920"
+            height="1280"
+          />
+          <div
+            className="absolute inset-0 bg-gradient-to-r from-slate-950/92 via-slate-950/72 to-slate-950/45"
+            aria-hidden="true"
+          />
+          <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
             <div className="grid lg:grid-cols-12 gap-10 lg:gap-14 items-center">
               <motion.div
                 initial={{ opacity: 0, y: 24 }}
@@ -226,10 +239,10 @@ const HomePage = () => {
                 transition={{ duration: 0.6, ease: [0.2, 0.8, 0.2, 1] }}
                 className="lg:col-span-7"
               >
-                <h1 className="font-editorial text-display-2xl font-bold text-balance text-foreground">
+                <h1 className="font-editorial text-display-2xl font-bold text-balance text-white">
                   El preuniversitario PAES de Magallanes que te conoce por <span className="text-primary">nombre</span>.
                 </h1>
-                <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
+                <p className="mt-6 text-lg md:text-xl text-slate-200 max-w-2xl leading-relaxed">
                   Profesores locales con CV verificable, simulacros mensuales con percentil y
                   planes presenciales, online o mixtos. Preparate para entrar a la universidad
                   sin salir de Punta Arenas.
@@ -247,7 +260,7 @@ const HomePage = () => {
                     asChild
                     variant="outline"
                     size="lg"
-                    className="rounded-full text-base px-8"
+                    className="rounded-full border-white/30 !bg-transparent !text-white hover:!bg-white/10 text-base px-8"
                   >
                     <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
                       <MessageCircle className="mr-2 h-4 w-4 text-success" />
@@ -255,7 +268,7 @@ const HomePage = () => {
                     </a>
                   </Button>
                 </div>
-                <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
+                <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-300">
                   <span className="flex items-center gap-1.5">
                     <CheckCircle2 className="h-4 w-4 text-success" />
                     Grupos chicos (≤25)
