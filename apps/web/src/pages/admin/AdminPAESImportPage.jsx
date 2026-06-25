@@ -342,7 +342,7 @@ const AdminPAESImportPage = () => {
       );
     } catch (err) {
       console.error('Error extrayendo el PDF:', err);
-      toast.error('No se pudo leer el PDF.');
+      toast.error('No se pudo leer el PDF: ' + (err?.message || 'error desconocido'));
     } finally {
       setPdfBusy(false);
     }

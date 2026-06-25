@@ -8,13 +8,29 @@
 // pdfjs se carga con import() dinámico para NO engordar el bundle principal:
 // solo se descarga cuando el admin realmente sube un PDF.
 
+// pdf.js v4+/v6 usa Promise.withResolvers (Chrome 119+/Firefox 121+/Safari
+// 17.4+). En navegadores apenas más viejos no existe y la extracción falla con
+// "Promise.withResolvers is not a function"; este polyfill mínimo lo cubre.
+if (typeof Promise !== 'undefined' && typeof Promise.withResolvers !== 'function') {
+  Promise.withResolvers = function withResolvers() {
+    let resolve;
+    let reject;
+    const promise = new Promise((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+    return { promise, resolve, reject };
+  };
+}
+
 let _pdfjs = null;
 
 async function getPdfjs() {
   if (_pdfjs) return _pdfjs;
-  const pdfjs = await import('pdfjs-dist');
+  // Build "legacy" (transpilado) para máxima compatibilidad de navegadores.
+  const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
   // eslint-disable-next-line import/no-unresolved -- import virtual de Vite (?url): lo resuelve el bundler, no eslint
-  const worker = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
+  const worker = await import('pdfjs-dist/legacy/build/pdf.worker.min.mjs?url');
   pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
   _pdfjs = pdfjs;
   return pdfjs;
