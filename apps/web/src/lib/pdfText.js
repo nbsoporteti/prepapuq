@@ -31,7 +31,11 @@ async function getPdfjs() {
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
   // eslint-disable-next-line import/no-unresolved -- import virtual de Vite (?url): lo resuelve el bundler, no eslint
   const worker = await import('pdfjs-dist/legacy/build/pdf.worker.min.mjs?url');
-  pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
+  // Cache-bust (?v=2): antes del fix de nginx, este .mjs quedó cacheado como
+  // application/octet-stream con Cache-Control immutable (1 año), y el navegador
+  // seguía usando esa copia con MIME malo aunque el server ya lo corrigió. Una
+  // URL nueva lo obliga a re-pedirlo (ahora se sirve como text/javascript).
+  pdfjs.GlobalWorkerOptions.workerSrc = `${worker.default}?v=2`;
   _pdfjs = pdfjs;
   return pdfjs;
 }
