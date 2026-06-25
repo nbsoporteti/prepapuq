@@ -34,9 +34,9 @@ const Footer = () => {
               <img
                 src="/logo.webp"
                 alt="PrePa — Prepara tu futuro"
-                className="h-16 w-auto"
-                width="64"
-                height="64"
+                className="h-20 w-auto"
+                width="80"
+                height="80"
               />
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-md">

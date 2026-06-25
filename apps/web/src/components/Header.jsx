@@ -101,7 +101,7 @@ const Header = () => {
             <img
               src="/logo.webp"
               alt="PrePa — Prepara tu futuro"
-              className="h-11 w-auto shrink-0"
+              className="h-14 w-auto shrink-0"
               width="44"
               height="44"
             />
@@ -231,7 +231,7 @@ const Header = () => {
                   <img
                     src="/logo.webp"
                     alt="PrePa — Prepara tu futuro"
-                    className="h-11 w-auto shrink-0"
+                    className="h-14 w-auto shrink-0"
                     width="44"
                     height="44"
                   />
