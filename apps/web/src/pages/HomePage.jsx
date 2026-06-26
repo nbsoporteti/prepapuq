@@ -41,6 +41,27 @@ import pb from '@/lib/pocketbaseClient';
 
 const WHATSAPP_URL = 'https://wa.me/56900000000';
 
+// Structured data para Google (rich results). Solo datos verdaderos —
+// sin teléfono/dirección inventados.
+const ORG_JSONLD = {
+  '@context': 'https://schema.org',
+  '@type': 'EducationalOrganization',
+  name: 'PrePa — Prepara tu futuro',
+  alternateName: 'PrePa',
+  url: 'https://prepapuq.cl',
+  logo: 'https://prepapuq.cl/logo.webp',
+  image: 'https://prepapuq.cl/hero-puntaarenas.webp',
+  description:
+    'Preuniversitario PAES en Punta Arenas, Magallanes. Profesores locales con CV verificable, grupos chicos (≤25) y simulacros mensuales con percentil. Modalidad presencial, online o mixta.',
+  areaServed: { '@type': 'AdministrativeArea', name: 'Región de Magallanes, Chile' },
+  address: {
+    '@type': 'PostalAddress',
+    addressLocality: 'Punta Arenas',
+    addressRegion: 'Magallanes',
+    addressCountry: 'CL',
+  },
+};
+
 // Hitos PAES 2026 — calendario referencial DEMRE. Editables si DEMRE
 // publica fechas oficiales distintas; idealmente migran a feriados_cl
 // + hitos_paes en V2.
@@ -207,7 +228,11 @@ const HomePage = () => {
         <meta property="og:type" content="website" />
         <meta property="og:locale" content="es_CL" />
         <meta name="twitter:card" content="summary_large_image" />
+        <meta property="og:url" content="https://prepapuq.cl/" />
+        <meta property="og:image" content="https://prepapuq.cl/hero-puntaarenas.webp" />
+        <meta name="twitter:image" content="https://prepapuq.cl/hero-puntaarenas.webp" />
         <link rel="canonical" href="https://prepapuq.cl/" />
+        <script type="application/ld+json">{JSON.stringify(ORG_JSONLD)}</script>
       </Helmet>
 
       <main>
