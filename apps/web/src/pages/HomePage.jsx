@@ -333,6 +333,24 @@ const HomePage = () => {
         <ProgramasSection />
 
         {/* =========================================================== */}
+        {/* CALENDARIO PAES — subido para más visibilidad                */}
+        {/* =========================================================== */}
+        <section id="calendario" className="py-20 md:py-24">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-14 max-w-2xl mx-auto">
+              <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary">Tu hoja de ruta</p>
+              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
+                Calendario PAES {new Date().getFullYear()}
+              </h2>
+              <p className="mt-4 text-muted-foreground text-lg">
+                Los hitos clave para no llegar tarde a ningún proceso DEMRE.
+              </p>
+            </div>
+            <PaesTimeline hitos={PAES_HITOS_2026} className="max-w-5xl mx-auto" />
+          </div>
+        </section>
+
+        {/* =========================================================== */}
         {/* SECCIÓN 4 — MODALIDADES                                      */}
         {/* =========================================================== */}
         <section id="modalidades" className="py-20 md:py-24">
@@ -474,24 +492,6 @@ const HomePage = () => {
                 </p>
               </div>
             )}
-          </div>
-        </section>
-
-        {/* =========================================================== */}
-        {/* SECCIÓN 8 — CALENDARIO PAES                                  */}
-        {/* =========================================================== */}
-        <section id="calendario" className="py-20 md:py-24">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-14 max-w-2xl mx-auto">
-              <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary">Tu hoja de ruta</p>
-              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
-                Calendario PAES {new Date().getFullYear()}
-              </h2>
-              <p className="mt-4 text-muted-foreground text-lg">
-                Los hitos clave para no llegar tarde a ningún proceso DEMRE.
-              </p>
-            </div>
-            <PaesTimeline hitos={PAES_HITOS_2026} className="max-w-5xl mx-auto" />
           </div>
         </section>
 
