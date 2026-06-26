@@ -22,17 +22,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from '@/components/ui/carousel';
 import Footer from '@/components/Footer.jsx';
 import ContactForm from '@/components/ContactForm.jsx';
 import StatCounter from '@/components/landing/StatCounter.jsx';
-import AlumnoTestimonialCard from '@/components/landing/AlumnoTestimonialCard.jsx';
 import PaesTimeline from '@/components/landing/PaesTimeline.jsx';
 import CifrasBand from '@/components/landing/CifrasBand.jsx';
 import ProgramasSection from '@/components/landing/ProgramasSection.jsx';
@@ -148,24 +140,6 @@ const FAQS = [
   },
 ];
 
-const useTestimonios = () => useQuery({
-  queryKey: ['landing', 'testimonios_publicos'],
-  queryFn: async () => {
-    try {
-      const res = await pb.collection('testimonios_publicos').getList(1, 12, {
-        filter: 'activo = true',
-        sort: 'orden',
-        $autoCancel: false,
-      });
-      return res.items;
-    } catch (e) {
-      console.error('Error fetching testimonios:', e);
-      return [];
-    }
-  },
-  staleTime: 60_000,
-});
-
 const useResultadosPAES = () => useQuery({
   queryKey: ['landing', 'resultados_paes'],
   queryFn: async () => {
@@ -183,7 +157,6 @@ const useResultadosPAES = () => useQuery({
 });
 
 const HomePage = () => {
-  const { data: testimonios = [] } = useTestimonios();
   const { data: resultados } = useResultadosPAES();
   const location = useLocation();
 
@@ -519,44 +492,6 @@ const HomePage = () => {
               </p>
             </div>
             <PaesTimeline hitos={PAES_HITOS_2026} className="max-w-5xl mx-auto" />
-          </div>
-        </section>
-
-        {/* =========================================================== */}
-        {/* SECCIÓN 9 — TESTIMONIOS                                      */}
-        {/* =========================================================== */}
-        <section id="testimonios" className="py-20 md:py-24 bg-muted/30 border-t">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-14 max-w-2xl mx-auto">
-              <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary">Voces de exalumnos</p>
-              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
-                Ya están donde querían llegar.
-              </h2>
-            </div>
-
-            {testimonios.length === 0 ? (
-              <div className="p-8 rounded-2xl border bg-card text-center max-w-xl mx-auto">
-                <p className="text-muted-foreground">
-                  Pronto compartiremos historias reales de nuestros primeros egresados.
-                </p>
-              </div>
-            ) : (
-              <Carousel opts={{ align: 'start', loop: testimonios.length > 2 }} className="max-w-5xl mx-auto">
-                <CarouselContent>
-                  {testimonios.map((t) => (
-                    <CarouselItem key={t.id} className="basis-full md:basis-1/2 lg:basis-1/2">
-                      <div className="h-full p-1">
-                        <AlumnoTestimonialCard testimonio={t} />
-                      </div>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                <div className="hidden md:block">
-                  <CarouselPrevious />
-                  <CarouselNext />
-                </div>
-              </Carousel>
-            )}
           </div>
         </section>
 
