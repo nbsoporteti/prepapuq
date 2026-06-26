@@ -99,24 +99,24 @@ const Header = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Desktop visitante en home: logo centrado, links repartidos a ambos lados (tipo 4) */}
         {isVisitorHome && (
-          <div className="hidden h-16 grid-cols-[1fr_auto_1fr] items-center gap-4 md:grid">
-            <nav className="flex items-center gap-7 text-sm font-medium">
+          <div className="relative hidden h-16 grid-cols-[1fr_auto_1fr] items-center gap-8 md:grid lg:gap-12">
+            <nav className="flex items-center gap-8 text-sm font-medium">
               <button onClick={() => scrollToSection('programas')} className="text-foreground/80 transition-colors duration-200 hover:text-primary">Programas</button>
               <button onClick={() => scrollToSection('modalidades')} className="text-foreground/80 transition-colors duration-200 hover:text-primary">Modalidades</button>
+              <Link to="/clases-gratis" className="text-foreground/80 transition-colors duration-200 hover:text-primary">Clases gratis</Link>
             </nav>
-            <Link to="/" className="justify-self-center px-10 transition-opacity duration-200 hover:opacity-80">
-              <img
-                src="/logo-mark.webp"
-                alt="PrePa — Prepara tu futuro"
-                className="h-14 w-auto shrink-0"
-                width="417"
-                height="273"
-              />
+
+            {/* Logo flotante: sobresale por debajo de la barra */}
+            <Link to="/" aria-label="PrePa — inicio" className="relative z-20 justify-self-center">
+              <span aria-hidden="true" className="block h-16 w-36" />
+              <span className="absolute left-1/2 top-2 flex h-20 w-36 -translate-x-1/2 items-center justify-center rounded-2xl border bg-card shadow-lg transition-transform duration-200 hover:-translate-y-0.5">
+                <img src="/logo-mark.webp" alt="PrePa — Prepara tu futuro" className="h-12 w-auto" width="417" height="273" />
+              </span>
             </Link>
-            <div className="flex items-center justify-end gap-6 text-sm font-medium">
+
+            <div className="flex items-center justify-end gap-8 text-sm font-medium">
               <button onClick={() => scrollToSection('metodologia')} className="text-foreground/80 transition-colors duration-200 hover:text-primary">Por qué PrePa</button>
               <button onClick={() => scrollToSection('faq')} className="text-foreground/80 transition-colors duration-200 hover:text-primary">Preguntas</button>
-              <Link to="/clases-gratis" className="text-foreground/80 transition-colors duration-200 hover:text-primary">Clases gratis</Link>
               <Button asChild variant="ghost" className="text-foreground/80 hover:text-foreground">
                 <Link to="/login">Iniciar sesión</Link>
               </Button>
