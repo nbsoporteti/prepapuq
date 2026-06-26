@@ -72,7 +72,8 @@ const Header = () => {
   const navLinks = [
     { label: 'Programas', sectionId: 'programas' },
     { label: 'Modalidades', sectionId: 'modalidades' },
-    { label: 'Resultados', sectionId: 'resultados' },
+    { label: 'Por qué PrePa', sectionId: 'metodologia' },
+    { label: 'Preguntas', sectionId: 'faq' },
   ];
 
   // Extracted navigation links to ensure a single source of truth

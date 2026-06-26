@@ -96,8 +96,13 @@ const Footer = () => {
                 </button>
               </li>
               <li>
-                <button onClick={() => scrollToSection('resultados')} className="text-muted-foreground hover:text-primary transition-colors duration-fast text-left">
-                  Resultados PAES
+                <button onClick={() => scrollToSection('metodologia')} className="text-muted-foreground hover:text-primary transition-colors duration-fast text-left">
+                  Por qué PrePa
+                </button>
+              </li>
+              <li>
+                <button onClick={() => scrollToSection('faq')} className="text-muted-foreground hover:text-primary transition-colors duration-fast text-left">
+                  Preguntas frecuentes
                 </button>
               </li>
               <li>
