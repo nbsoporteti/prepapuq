@@ -101,11 +101,6 @@ const Footer = () => {
                 </button>
               </li>
               <li>
-                <button onClick={() => scrollToSection('equipo')} className="text-muted-foreground hover:text-primary transition-colors duration-fast text-left">
-                  Equipo docente
-                </button>
-              </li>
-              <li>
                 <button onClick={() => scrollToSection('contacto')} className="text-muted-foreground hover:text-primary transition-colors duration-fast text-left">
                   Contacto
                 </button>

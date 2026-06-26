@@ -32,7 +32,6 @@ import {
 import Footer from '@/components/Footer.jsx';
 import ContactForm from '@/components/ContactForm.jsx';
 import StatCounter from '@/components/landing/StatCounter.jsx';
-import TeacherCard from '@/components/landing/TeacherCard.jsx';
 import AlumnoTestimonialCard from '@/components/landing/AlumnoTestimonialCard.jsx';
 import PaesTimeline from '@/components/landing/PaesTimeline.jsx';
 import CifrasBand from '@/components/landing/CifrasBand.jsx';
@@ -149,24 +148,6 @@ const FAQS = [
   },
 ];
 
-const useProfesores = () => useQuery({
-  queryKey: ['landing', 'profesores_publicos'],
-  queryFn: async () => {
-    try {
-      const res = await pb.collection('profesores_publicos').getList(1, 12, {
-        filter: 'activo = true',
-        sort: 'orden',
-        $autoCancel: false,
-      });
-      return res.items;
-    } catch (e) {
-      console.error('Error fetching profesores:', e);
-      return [];
-    }
-  },
-  staleTime: 60_000,
-});
-
 const useTestimonios = () => useQuery({
   queryKey: ['landing', 'testimonios_publicos'],
   queryFn: async () => {
@@ -202,7 +183,6 @@ const useResultadosPAES = () => useQuery({
 });
 
 const HomePage = () => {
-  const { data: profesores = [] } = useProfesores();
   const { data: testimonios = [] } = useTestimonios();
   const { data: resultados } = useResultadosPAES();
   const location = useLocation();
@@ -461,38 +441,6 @@ const HomePage = () => {
         </section>
 
         {/* =========================================================== */}
-        {/* SECCIÓN 6 — EQUIPO DOCENTE                                   */}
-        {/* =========================================================== */}
-        <section id="equipo" className="py-20 md:py-24">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-3xl mb-14">
-              <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary">Equipo local</p>
-              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
-                Profesores con nombre, cara y CV.
-              </h2>
-              <p className="mt-4 text-muted-foreground text-lg">
-                No es un call center de tutores anónimos. Cada profesor de PrePa publica su universidad de origen y su trayectoria.
-              </p>
-            </div>
-
-            {profesores.length === 0 ? (
-              <div className="p-8 rounded-2xl border bg-card text-center max-w-xl mx-auto">
-                <Users className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground">
-                  Estamos cargando el equipo docente desde el panel admin. Volvé en unos días.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {profesores.map((p) => (
-                  <TeacherCard key={p.id} profesor={p} />
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* =========================================================== */}
         {/* SECCIÓN 7 — RESULTADOS                                       */}
         {/* =========================================================== */}
         <section id="resultados" className="py-20 md:py-24 border-t bg-muted/30">
@@ -549,7 +497,7 @@ const HomePage = () => {
                 </p>
                 <p className="mt-2 text-muted-foreground">
                   Los resultados PAES verificables se publican apenas DEMRE entrega los puntajes oficiales.
-                  Mientras tanto, conocé al equipo y la metodología.
+                  Mientras tanto, conocé la metodología y los programas.
                 </p>
               </div>
             )}

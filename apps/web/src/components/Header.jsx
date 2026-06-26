@@ -73,7 +73,6 @@ const Header = () => {
     { label: 'Programas', sectionId: 'programas' },
     { label: 'Modalidades', sectionId: 'modalidades' },
     { label: 'Resultados', sectionId: 'resultados' },
-    { label: 'Equipo', sectionId: 'equipo' },
   ];
 
   // Extracted navigation links to ensure a single source of truth
