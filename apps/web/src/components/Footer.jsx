@@ -1,12 +1,7 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Mail, MapPin, MessageCircle, Instagram, Facebook } from 'lucide-react';
-
-const WHATSAPP_NUMBER = '+56 9 0000 0000'; // editable en el panel admin (PB) o hardcodear cuando esté
-const WHATSAPP_URL = 'https://wa.me/56900000000'; // ídem
-const EMAIL = 'contacto@prepapuq.cl';
-const INSTAGRAM_URL = '#';
-const FACEBOOK_URL = '#';
+import { SITE } from '@/lib/site';
 
 const Footer = () => {
   const location = useLocation();
@@ -46,7 +41,7 @@ const Footer = () => {
             </p>
             <div className="flex items-center gap-3 mt-5">
               <a
-                href={WHATSAPP_URL}
+                href={SITE.whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-success text-success-foreground text-sm font-medium hover:bg-success/90 transition-colors duration-base shadow-sm"
@@ -54,20 +49,28 @@ const Footer = () => {
                 <MessageCircle className="h-4 w-4" />
                 WhatsApp
               </a>
-              <a
-                href={INSTAGRAM_URL}
-                aria-label="Instagram"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors duration-base"
-              >
-                <Instagram className="h-4 w-4" />
-              </a>
-              <a
-                href={FACEBOOK_URL}
-                aria-label="Facebook"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors duration-base"
-              >
-                <Facebook className="h-4 w-4" />
-              </a>
+              {SITE.instagram && (
+                <a
+                  href={SITE.instagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Instagram"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors duration-base"
+                >
+                  <Instagram className="h-4 w-4" />
+                </a>
+              )}
+              {SITE.facebook && (
+                <a
+                  href={SITE.facebook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Facebook"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors duration-base"
+                >
+                  <Facebook className="h-4 w-4" />
+                </a>
+              )}
             </div>
           </div>
 
@@ -134,14 +137,14 @@ const Footer = () => {
               </li>
               <li className="flex items-center gap-2">
                 <MessageCircle className="h-4 w-4 text-primary shrink-0" />
-                <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors duration-fast">
-                  {WHATSAPP_NUMBER}
+                <a href={SITE.whatsappUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors duration-fast">
+                  {SITE.whatsappNumero}
                 </a>
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-primary shrink-0" />
-                <a href={`mailto:${EMAIL}`} className="text-muted-foreground hover:text-primary transition-colors duration-fast">
-                  {EMAIL}
+                <a href={`mailto:${SITE.email}`} className="text-muted-foreground hover:text-primary transition-colors duration-fast">
+                  {SITE.email}
                 </a>
               </li>
             </ul>

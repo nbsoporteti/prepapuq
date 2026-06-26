@@ -4,6 +4,7 @@ import { Helmet } from 'react-helmet';
 import { Home, MessageCircle, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext.jsx';
+import { SITE } from '@/lib/site';
 import Footer from '@/components/Footer.jsx';
 
 const DASHBOARD_POR_ROL = {
@@ -47,13 +48,13 @@ const NotFoundPage = () => {
               </Link>
             </Button>
             <Button asChild variant="outline">
-              <a href="https://wa.me/56900000000" target="_blank" rel="noopener noreferrer">
+              <a href={SITE.whatsappUrl} target="_blank" rel="noopener noreferrer">
                 <MessageCircle className="h-4 w-4 mr-2 text-success" />
                 WhatsApp
               </a>
             </Button>
             <Button asChild variant="outline">
-              <a href="mailto:contacto@prepapuq.cl">
+              <a href={`mailto:${SITE.email}`}>
                 <Mail className="h-4 w-4 mr-2" />
                 Email
               </a>

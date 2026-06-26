@@ -16,6 +16,7 @@ import EstudiantePAES from './estudiante/EstudiantePAES.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useTareasAlumno } from '@/hooks/useTareasAlumno.js';
 import pb from '@/lib/pocketbaseClient';
+import { SITE } from '@/lib/site';
 
 const tabTriggerCls = 'data-[state=active]:bg-transparent data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-4 py-3 whitespace-nowrap';
 
@@ -220,7 +221,7 @@ const EstudianteDashboard = () => {
                     icon={BookOpen}
                     title="Aún no tenés cursos asignados"
                     description="Contactá a administración para regularizar tu matrícula."
-                    action={{ label: 'Contactar', href: 'mailto:contacto@prepapuq.cl', variant: 'outline' }}
+                    action={{ label: 'Contactar', href: `mailto:${SITE.email}`, variant: 'outline' }}
                   />
                 ) : (
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -38,8 +38,9 @@ import PaesTimeline from '@/components/landing/PaesTimeline.jsx';
 import CifrasBand from '@/components/landing/CifrasBand.jsx';
 import ProgramasSection from '@/components/landing/ProgramasSection.jsx';
 import pb from '@/lib/pocketbaseClient';
+import { SITE } from '@/lib/site';
 
-const WHATSAPP_URL = 'https://wa.me/56900000000';
+const WHATSAPP_URL = SITE.whatsappUrl;
 
 // Structured data para Google (rich results). Solo datos verdaderos —
 // sin teléfono/dirección inventados.
