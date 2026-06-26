@@ -40,9 +40,14 @@ const CifrasBand = ({ resultados }) => {
   return (
     <section
       aria-label="PrePa en números"
-      className="border-y bg-card"
+      className="relative overflow-hidden border-y bg-card"
     >
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-14">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute top-[-30px] left-[8%] h-20 w-20 rounded-full bg-primary/10" />
+        <div className="absolute bottom-[-30px] right-[12%] h-24 w-24 rotate-12 rounded-2xl bg-accent/15" />
+        <div className="absolute top-1/2 right-[38%] h-10 w-10 rounded-full bg-secondary/15" />
+      </div>
+      <div className="container relative mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-14">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10">
           {items.map((it, idx) => (
             <div

@@ -153,11 +153,16 @@ const ProgramaCard = ({ plan }) => {
  */
 const ProgramasSection = () => {
   return (
-    <section id="programas" className="py-20 md:py-24 bg-muted/30 border-t">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="programas" className="relative overflow-hidden py-20 md:py-24 bg-muted/30 border-t">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-16 right-[-60px] h-72 w-72 rounded-full bg-primary/10" />
+        <div className="absolute bottom-10 left-[-40px] h-52 w-52 rounded-full bg-secondary/10" />
+        <div className="absolute top-24 left-[12%] h-12 w-12 rotate-12 rounded-2xl bg-accent/20" />
+      </div>
+      <div className="container relative mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14 max-w-2xl mx-auto">
           <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary">Admisión 2027</p>
-          <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance">
+          <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
             Un programa para cada etapa
           </h2>
           <p className="mt-4 text-muted-foreground text-lg">

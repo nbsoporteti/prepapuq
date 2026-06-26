@@ -374,7 +374,7 @@ const HomePage = () => {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-14 max-w-2xl mx-auto">
               <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary">Adaptado a tu vida</p>
-              <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance">
+              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
                 Tres formas de prepararte.
               </h2>
               <p className="mt-4 text-muted-foreground text-lg">
@@ -415,7 +415,7 @@ const HomePage = () => {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-14 max-w-2xl mx-auto">
               <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary">¿Por qué PrePa?</p>
-              <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance">
+              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
                 Hecho para estudiar en Magallanes
               </h2>
               <p className="mt-4 text-muted-foreground text-lg">
@@ -455,7 +455,7 @@ const HomePage = () => {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl mb-14">
               <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary">Equipo local</p>
-              <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance">
+              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
                 Profesores con nombre, cara y CV.
               </h2>
               <p className="mt-4 text-muted-foreground text-lg">
@@ -487,7 +487,7 @@ const HomePage = () => {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-14 max-w-2xl mx-auto">
               <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary">Resultados verificables</p>
-              <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance">
+              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
                 Lo que logran nuestros estudiantes
               </h2>
               <p className="mt-4 text-muted-foreground text-lg">
@@ -551,7 +551,7 @@ const HomePage = () => {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-14 max-w-2xl mx-auto">
               <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary">Tu hoja de ruta</p>
-              <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance">
+              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
                 Calendario PAES {new Date().getFullYear()}
               </h2>
               <p className="mt-4 text-muted-foreground text-lg">
@@ -569,7 +569,7 @@ const HomePage = () => {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-14 max-w-2xl mx-auto">
               <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary">Voces de exalumnos</p>
-              <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance">
+              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
                 Ya están donde querían llegar.
               </h2>
             </div>
@@ -607,7 +607,7 @@ const HomePage = () => {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-3xl">
             <div className="text-center mb-10">
               <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary">Preguntas frecuentes</p>
-              <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance">
+              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
                 Lo que más nos preguntan
               </h2>
             </div>
@@ -640,7 +640,7 @@ const HomePage = () => {
                 <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-accent">
                   Admisión {anioPromocion} · cupos limitados
                 </p>
-                <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance">
+                <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance">
                   Reservá tu cupo en la promoción {anioPromocion}
                 </h2>
                 <p className="mt-5 text-muted-foreground text-lg">
@@ -677,10 +677,15 @@ const HomePage = () => {
         {/* =========================================================== */}
         {/* SECCIÓN 12 — BANDA CTA FINAL (navy, estilo Calendly)        */}
         {/* =========================================================== */}
-        <section className="bg-slate-900 text-white">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
+        <section className="relative overflow-hidden bg-slate-900 text-white">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute -top-16 -left-12 h-64 w-64 rounded-full bg-primary/20" />
+            <div className="absolute -bottom-20 right-10 h-72 w-72 rounded-full bg-secondary/15" />
+            <div className="absolute top-10 right-1/4 h-16 w-16 rotate-12 rounded-2xl bg-accent/30" />
+          </div>
+          <div className="container relative mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
             <div className="mx-auto max-w-3xl text-center">
-              <h2 className="font-editorial text-3xl md:text-4xl font-bold tracking-tight text-balance text-white">
+              <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-balance text-white">
                 No dejes tu PAES para último momento.
               </h2>
               <p className="mt-4 text-lg text-slate-300">
