@@ -1,0 +1,11 @@
+# PrePa — preuniversitario PAES en Punta Arenas
+User-agent: *
+Allow: /
+
+# Paneles privados (auth) — no tiene sentido indexarlos
+Disallow: /dashboard/
+Disallow: /perfil
+Disallow: /notificaciones
+Disallow: /anuncios
+
+Sitemap: https://prepapuq.cl/sitemap.xml
