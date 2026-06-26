@@ -239,23 +239,17 @@ const HomePage = () => {
         {/* =========================================================== */}
         <section
           id="inicio"
-          className="relative overflow-hidden border-b bg-slate-950"
+          className="relative overflow-hidden border-b bg-background"
         >
-          {/* Fondo: foto real de Punta Arenas y el Estrecho de Magallanes (Unsplash,
-              licencia libre). Swappable por una foto propia en /hero-puntaarenas.webp */}
-          <img
-            src="/hero-puntaarenas.webp"
-            alt="Vista de Punta Arenas y el Estrecho de Magallanes"
-            className="absolute inset-0 h-full w-full object-cover object-center"
-            width="1920"
-            height="1280"
-          />
-          {/* Scrim de legibilidad: capa base pareja + refuerzo a la izquierda (texto). */}
-          <div className="absolute inset-0 bg-slate-950/55" aria-hidden="true" />
-          <div
-            className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-950/45 to-slate-950/10"
-            aria-hidden="true"
-          />
+          {/* Dirección "geométrico vibrante": formas de color como protagonistas. */}
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute -top-20 -right-16 h-80 w-80 rounded-full bg-primary/15" />
+            <div className="absolute top-28 right-28 h-24 w-24 rotate-12 rounded-3xl bg-accent/30" />
+            <div className="absolute -bottom-28 -left-24 h-96 w-96 rounded-full bg-secondary/10" />
+            <div className="absolute bottom-16 left-[14%] h-16 w-16 rounded-2xl bg-primary/25" />
+            <div className="absolute top-[55%] left-[7%] h-10 w-10 rounded-full bg-accent/40" />
+            <div className="hidden lg:block absolute top-24 left-[46%] h-14 w-14 rounded-full border-4 border-secondary/30" />
+          </div>
           <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
             <div className="grid lg:grid-cols-12 gap-10 lg:gap-14 items-center">
               <motion.div
@@ -264,10 +258,10 @@ const HomePage = () => {
                 transition={{ duration: 0.6, ease: [0.2, 0.8, 0.2, 1] }}
                 className="lg:col-span-7"
               >
-                <h1 className="font-editorial text-display-2xl font-bold text-balance text-white">
+                <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-balance text-foreground">
                   El preuniversitario PAES de Magallanes que te conoce por <span className="text-primary">nombre</span>.
                 </h1>
-                <p className="mt-6 text-lg md:text-xl text-slate-200 max-w-2xl leading-relaxed">
+                <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
                   Profesores locales con CV verificable, simulacros mensuales con percentil y
                   planes presenciales, online o mixtos. Preparate para entrar a la universidad
                   sin salir de Punta Arenas.
@@ -276,7 +270,7 @@ const HomePage = () => {
                   <Button
                     size="lg"
                     onClick={() => scrollToSection('programas')}
-                    className="rounded-full bg-accent text-accent-foreground hover:bg-accent/90 font-semibold text-base px-8"
+                    className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-base px-8"
                   >
                     Conocer los programas
                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -285,7 +279,7 @@ const HomePage = () => {
                     asChild
                     variant="outline"
                     size="lg"
-                    className="rounded-full border-white/30 !bg-transparent !text-white hover:!bg-white/10 text-base px-8"
+                    className="rounded-full text-base px-8"
                   >
                     <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
                       <MessageCircle className="mr-2 h-4 w-4 text-success" />
@@ -293,7 +287,7 @@ const HomePage = () => {
                     </a>
                   </Button>
                 </div>
-                <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-300">
+                <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1.5">
                     <CheckCircle2 className="h-4 w-4 text-success" />
                     Grupos chicos (≤25)
@@ -317,25 +311,26 @@ const HomePage = () => {
                 className="lg:col-span-5"
               >
                 {/* Panel de marca — logo real + cifras estructurales verdaderas */}
-                <div className="rounded-2xl border bg-card shadow-sm p-8 md:p-10">
+                <div className="relative rounded-3xl border bg-card shadow-sm p-8 md:p-10">
+                  <div aria-hidden="true" className="absolute -top-4 -right-4 h-16 w-16 rotate-12 rounded-2xl bg-accent/30" />
                   <img
                     src="/logo.webp"
                     alt="PrePa — Prepara tu futuro"
-                    className="mx-auto h-28 w-auto"
+                    className="relative mx-auto h-28 w-auto"
                     width="224"
                     height="224"
                   />
 
-                  <div className="mt-8 grid grid-cols-3 gap-2 text-center">
-                    <div>
+                  <div className="mt-8 grid grid-cols-3 gap-2.5 text-center">
+                    <div className="rounded-2xl bg-primary/10 py-3">
                       <p className="font-mono text-2xl md:text-3xl font-bold tabular-nums text-primary">5</p>
                       <p className="mt-1 text-xs text-muted-foreground leading-tight">pruebas PAES</p>
                     </div>
-                    <div className="border-x">
+                    <div className="rounded-2xl bg-secondary/10 py-3">
                       <p className="font-mono text-2xl md:text-3xl font-bold tabular-nums text-secondary">≤25</p>
                       <p className="mt-1 text-xs text-muted-foreground leading-tight">por grupo</p>
                     </div>
-                    <div>
+                    <div className="rounded-2xl bg-accent/15 py-3">
                       <p className="font-mono text-2xl md:text-3xl font-bold tabular-nums text-foreground">3</p>
                       <p className="mt-1 text-xs text-muted-foreground leading-tight">modalidades</p>
                     </div>
