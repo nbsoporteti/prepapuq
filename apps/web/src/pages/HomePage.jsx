@@ -224,7 +224,7 @@ const HomePage = () => {
                 className="lg:col-span-7"
               >
                 <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-balance text-foreground">
-                  El preuniversitario PAES de Magallanes que te conoce por <span className="text-primary">nombre</span>.
+                  Preparate para la PAES con profes que <span className="text-primary">sí están</span>.
                 </h1>
                 <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
                   Profes de la región con CV verificable, simulacros mensuales con tu percentil
