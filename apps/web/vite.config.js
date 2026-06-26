@@ -11,6 +11,20 @@ export default defineConfig({
 		include: allDeps,
 	},
 	plugins: [react()],
+	build: {
+		rollupOptions: {
+			output: {
+				// React + router en su propio chunk: cachea aparte (cambia poco entre
+				// deploys) y baja el chunk de entrada bajo el warning de 500 KB. Forma
+				// objeto = toca SOLO estos paquetes; los chunks lazy de las rutas
+				// (katex, pdfjs) siguen separados.
+				manualChunks: {
+					react: ['react', 'react-dom', 'react-router-dom'],
+					motion: ['framer-motion'],
+				},
+			},
+		},
+	},
 	server: {
 		port: 3000,
 		fs: {
