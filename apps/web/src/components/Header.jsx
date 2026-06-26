@@ -131,18 +131,34 @@ const Header = () => {
         )}
 
         <div className={`flex h-16 items-center justify-between ${isVisitorHome ? 'md:hidden' : ''}`}>
-          <Link
-            to="/"
-            className="flex items-center transition-opacity duration-200 hover:opacity-80"
-          >
-            <img
-              src="/logo-mark.webp"
-              alt="PrePa — Prepara tu futuro"
-              className="h-14 w-auto shrink-0"
-              width="417"
-              height="273"
-            />
-          </Link>
+          {!isAuthenticated ? (
+            /* Logo flotante también en mobile y fuera del home, para coherencia con el tipo 4 */
+            <Link to="/" aria-label="PrePa — inicio" className="relative shrink-0">
+              <span aria-hidden="true" className="block h-16 w-28 md:w-36" />
+              <span className="absolute left-0 top-2 flex h-[4.5rem] w-28 items-center justify-center rounded-2xl border bg-card shadow-lg transition-transform duration-200 hover:-translate-y-0.5 md:h-20 md:w-36">
+                <img
+                  src="/logo-mark.webp"
+                  alt="PrePa — Prepara tu futuro"
+                  className="h-11 w-auto md:h-12"
+                  width="417"
+                  height="273"
+                />
+              </span>
+            </Link>
+          ) : (
+            <Link
+              to="/"
+              className="flex items-center transition-opacity duration-200 hover:opacity-80"
+            >
+              <img
+                src="/logo-mark.webp"
+                alt="PrePa — Prepara tu futuro"
+                className="h-14 w-auto shrink-0"
+                width="417"
+                height="273"
+              />
+            </Link>
+          )}
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
