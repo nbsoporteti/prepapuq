@@ -128,6 +128,18 @@ const FAQS = [
     a: 'Depende del año y la universidad. Medicina U. Chile / UC suele requerir 800+. Ingeniería Civil ronda los 700-780. En tu primer simulacro te entregamos un informe con tu puntaje proyectado y las carreras alcanzables en cada universidad chilena.',
   },
   {
+    q: '¿Desde cuándo conviene empezar?',
+    a: 'Cuanto antes, mejor — pero nunca es tarde. En 3° medio armás bases y hábitos con ventaja, 4° medio es la preparación completa para diciembre, y si ya egresaste el plan intensivo va directo a lo que te falta. Lo clave es arrancar con un diagnóstico, no a ciegas.',
+  },
+  {
+    q: '¿Cómo sé si estoy mejorando?',
+    a: 'Con números, no con sensaciones. Arrancás con un diagnóstico, rendís simulacros todos los meses con tu percentil y recibís un informe de puntaje proyectado por carrera. Así ves exactamente cuánto subiste desde el día uno.',
+  },
+  {
+    q: '¿Le hacen seguimiento al apoderado?',
+    a: 'Sí. El apoderado recibe el avance y la asistencia de su pupilo, y nos escribe directo por WhatsApp cuando quiera. Sin call center: responde alguien del equipo que conoce a tu hijo o hija por nombre.',
+  },
+  {
     q: '¿Cuánto cuesta?',
     a: 'Hablá con nosotros por WhatsApp y armamos un plan de cuotas según tu situación. Tenemos becas parciales para alumnos destacados de Magallanes.',
   },
@@ -262,8 +274,8 @@ const HomePage = () => {
                   El preuniversitario PAES de Magallanes que te conoce por <span className="text-primary">nombre</span>.
                 </h1>
                 <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
-                  Profesores locales con CV verificable, simulacros mensuales con percentil y
-                  planes presenciales, online o mixtos. Preparate para entrar a la universidad
+                  Profes de la región con CV verificable, simulacros mensuales con tu percentil
+                  real y un plan por materia según tus puntos débiles. Entrá a la universidad
                   sin salir de Punta Arenas.
                 </p>
                 <div className="mt-8 flex flex-col sm:flex-row gap-3">

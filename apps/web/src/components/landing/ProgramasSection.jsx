@@ -29,7 +29,7 @@ const PLANES = [
     nivel: '3° Medio',
     titulo: 'Plan Anticipado',
     descripcion:
-      'Empezá un año antes: bases sólidas en Matemática y Competencia Lectora, hábitos de estudio y un diagnóstico claro para llegar a 4° con ventaja.',
+      'Arrancá un año antes y llegá a 4° con ventaja: bases firmes en Matemática y Competencia Lectora, hábitos de estudio y tu primer diagnóstico PAES, sin la presión del año decisivo.',
     bullets: [
       'Clases en vivo semanales',
       'Material y guías PrePa',
@@ -44,7 +44,7 @@ const PLANES = [
     nivel: '4° Medio',
     titulo: 'PAES Integral',
     descripcion:
-      'La preparación completa para rendir en diciembre: todas las pruebas, simulacros mensuales con percentil y un plan personalizado según tus puntos débiles.',
+      'Tu año decisivo cubierto de punta a punta: las 5 pruebas, simulacros mensuales con percentil e informe, y un plan que ataca tus puntos débiles uno por uno.',
     bullets: [
       'Las 5 pruebas PAES',
       'Simulacros mensuales con percentil',
@@ -60,7 +60,7 @@ const PLANES = [
     nivel: 'Egresados',
     titulo: 'Intensivo PAES',
     descripcion:
-      'Volvé a rendir con foco en lo que te falta. Repaso intensivo por asignatura y simulacros para subir tu puntaje justo donde más pesa para tu carrera.',
+      'Una segunda vuelta con estrategia: repaso intensivo por asignatura y simulacros enfocados donde más suma para la carrera que querés, con horarios que conviven con el trabajo.',
     bullets: [
       'Foco en tus debilidades',
       'Repaso por asignatura',
