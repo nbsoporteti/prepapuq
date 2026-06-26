@@ -228,9 +228,6 @@ const HomePage = () => {
         <meta property="og:type" content="website" />
         <meta property="og:locale" content="es_CL" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta property="og:url" content="https://prepapuq.cl/" />
-        <meta property="og:image" content="https://prepapuq.cl/hero-puntaarenas.webp" />
-        <meta name="twitter:image" content="https://prepapuq.cl/hero-puntaarenas.webp" />
         <link rel="canonical" href="https://prepapuq.cl/" />
         <script type="application/ld+json">{JSON.stringify(ORG_JSONLD)}</script>
       </Helmet>
