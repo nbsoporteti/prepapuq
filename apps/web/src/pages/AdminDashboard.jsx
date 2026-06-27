@@ -19,6 +19,8 @@ import EnrolledStudentsList from '@/components/EnrolledStudentsList.jsx';
 import AttendanceTab from '@/components/AttendanceTab.jsx';
 import AdminOverviewTab from '@/components/admin/AdminOverviewTab.jsx';
 import UsuariosTab from '@/components/admin/UsuariosTab.jsx';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useConfirm } from '@/components/shared/useConfirm.jsx';
 
 const ASIGNATURA_PAES_LABEL = {
   competencia_lectora: 'Competencia Lectora',
@@ -30,9 +32,11 @@ const ASIGNATURA_PAES_LABEL = {
 
 const AdminDashboard = () => {
   const { currentUser } = useAuth();
+  const { confirm, dialog } = useConfirm();
   
   // Shared State
   const [cursos, setCursos] = useState([]);
+  const [loadingCursos, setLoadingCursos] = useState(true);
   const [simulacrosPaes, setSimulacrosPaes] = useState([]);
 
   // Tab 2 State: Materiales
@@ -74,6 +78,8 @@ const AdminDashboard = () => {
     } catch (err) {
       console.error('[ENROLLMENT DEBUG]', 'Error fetching courses:', err);
       toast.error('Error al cargar cursos');
+    } finally {
+      setLoadingCursos(false);
     }
   };
 
@@ -88,7 +94,6 @@ const AdminDashboard = () => {
   };
 
   const handleDeleteSimulacro = async (id) => {
-    if (!window.confirm('¿Eliminar este simulacro y todas sus preguntas? No se puede deshacer.')) return;
     try {
       await pb.collection('simulacros_paes').delete(id, { $autoCancel: false });
       toast.success('Simulacro eliminado');
@@ -105,7 +110,6 @@ const AdminDashboard = () => {
   // "Eliminar" = archivar (soft-delete). Borrar de verdad falla porque el curso
   // está referenciado por relaciones obligatorias (secciones, matrículas, etc.).
   const handleArchiveCourse = async (id) => {
-    if (!window.confirm('¿Archivar este curso? Se oculta de la gestión pero no se borra; podés restaurarlo cuando quieras.')) return;
     try {
       await pb.collection('cursos').update(id, { archivado: true }, { $autoCancel: false });
       toast.success('Curso archivado');
@@ -176,7 +180,6 @@ const AdminDashboard = () => {
   };
 
   const handleDeleteMaterial = async (id) => {
-    if (!window.confirm('¿Eliminar material?')) return;
     try {
       await pb.collection('materiales').delete(id, { $autoCancel: false });
       toast.success('Material eliminado');
@@ -281,7 +284,6 @@ const AdminDashboard = () => {
   };
 
   const handleRemoveStudent = async (id) => {
-    if (!window.confirm('¿Remover estudiante de este curso?')) return;
     try {
       await pb.collection('asignaciones').delete(id, { $autoCancel: false });
       toast.success('Matrícula removida exitosamente');
@@ -369,7 +371,12 @@ const AdminDashboard = () => {
 
                 <div className="lg:col-span-2">
                   <h3 className="text-xl font-semibold mb-4">Cursos Activos ({cursosActivos.length})</h3>
-                  {cursosActivos.length === 0 ? (
+                  {loadingCursos ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Skeleton className="h-40 rounded-2xl" />
+                      <Skeleton className="h-40 rounded-2xl" />
+                    </div>
+                  ) : cursosActivos.length === 0 ? (
                     <div className="flex flex-col items-center justify-center p-12 border rounded-2xl bg-card text-center shadow-sm">
                       <BookOpen className="h-12 w-12 text-muted-foreground/50 mb-4" />
                       <p className="text-muted-foreground font-medium">No hay cursos activos</p>
@@ -389,7 +396,12 @@ const AdminDashboard = () => {
                               variant="secondary"
                               size="icon"
                               className="shadow-sm"
-                              onClick={() => handleArchiveCourse(curso.id)}
+                              onClick={() => confirm({
+                                title: 'Archivar curso',
+                                description: 'Se oculta de la gestión pero no se borra; podés restaurarlo cuando quieras.',
+                                confirmLabel: 'Archivar',
+                                action: () => handleArchiveCourse(curso.id),
+                              })}
                               title="Archivar curso"
                             >
                               <Archive className="h-4 w-4" />
@@ -514,7 +526,12 @@ const AdminDashboard = () => {
                    ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {materiales.map(mat => (
-                          <MaterialCard key={mat.id} material={mat} onDelete={handleDeleteMaterial} isAdmin={true} />
+                          <MaterialCard
+                            key={mat.id}
+                            material={mat}
+                            onDelete={(id) => confirm({ title: 'Eliminar material', description: '¿Eliminar este material del curso?', confirmLabel: 'Eliminar', destructive: true, action: () => handleDeleteMaterial(id) })}
+                            isAdmin={true}
+                          />
                         ))}
                       </div>
                    )}
@@ -592,7 +609,7 @@ const AdminDashboard = () => {
                    
                    <EnrolledStudentsList 
                      asignaciones={asignaciones} 
-                     onRemove={handleRemoveStudent} 
+                     onRemove={(id) => confirm({ title: 'Remover estudiante', description: '¿Sacar a este estudiante del curso?', confirmLabel: 'Remover', destructive: true, action: () => handleRemoveStudent(id) })}
                      courseSelected={!!selectedCourseForAssign}
                    />
                  </div>
@@ -696,7 +713,13 @@ const AdminDashboard = () => {
                                 variant="ghost"
                                 size="icon"
                                 className="text-destructive hover:text-destructive"
-                                onClick={() => handleDeleteSimulacro(s.id)}
+                                onClick={() => confirm({
+                                  title: 'Eliminar simulacro',
+                                  description: 'Se elimina el simulacro y todas sus preguntas. No se puede deshacer.',
+                                  confirmLabel: 'Eliminar',
+                                  destructive: true,
+                                  action: () => handleDeleteSimulacro(s.id),
+                                })}
                                 title="Eliminar simulacro"
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -718,6 +741,7 @@ const AdminDashboard = () => {
           </Tabs>
         </div>
       </div>
+      {dialog}
     </>
   );
 };
