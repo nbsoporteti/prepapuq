@@ -12,6 +12,8 @@ import {
   Dna,
   Atom,
   FlaskConical,
+  CheckCircle2,
+  Circle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -52,6 +54,8 @@ const CourseDetailPage = () => {
   const [course, setCourse] = useState(null);
   const [lessons, setLessons] = useState([]);
   const [materials, setMaterials] = useState([]);
+  const [progreso, setProgreso] = useState({});
+  const [progresoOk, setProgresoOk] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -71,8 +75,8 @@ const CourseDetailPage = () => {
           throw new Error('No tienes acceso a este curso.');
         }
 
-        // 2. Curso + lecciones + materiales en paralelo
-        const [courseData, lessonsData, materialsData] = await Promise.all([
+        // 2. Curso + lecciones + materiales + progreso en paralelo
+        const [courseData, lessonsData, materialsData, progresoData] = await Promise.all([
           pb.collection('cursos').getOne(cursoId, { $autoCancel: false }),
           pb.collection('lecciones').getFullList({
             filter: `curso_id = "${cursoId}" && publicada = true`,
@@ -84,11 +88,22 @@ const CourseDetailPage = () => {
             sort: '-created',
             $autoCancel: false,
           }),
+          // Puede no existir aún la colección (pre-migración): degradamos a null.
+          pb.collection('progreso_lecciones').getFullList({
+            filter: `alumno_id = "${currentUser.id}" && leccion_id.curso_id = "${cursoId}"`,
+            $autoCancel: false,
+          }).catch(() => null),
         ]);
 
         setCourse(courseData);
         setLessons(lessonsData);
         setMaterials(materialsData);
+        if (progresoData) {
+          const map = {};
+          for (const p of progresoData) map[p.leccion_id] = { id: p.id, visto: !!p.visto };
+          setProgreso(map);
+          setProgresoOk(true);
+        }
       } catch (err) {
         console.error('Error loading course:', err);
         setError(err.message || 'Error al cargar el curso.');
@@ -100,6 +115,29 @@ const CourseDetailPage = () => {
 
     fetchCourseData();
   }, [cursoId, currentUser.id]);
+
+  const toggleVisto = async (leccionId) => {
+    const cur = progreso[leccionId];
+    try {
+      if (cur) {
+        const visto = !cur.visto;
+        await pb.collection('progreso_lecciones').update(
+          cur.id,
+          { visto, fecha_visto: visto ? new Date().toISOString() : null },
+          { $autoCancel: false },
+        );
+        setProgreso((p) => ({ ...p, [leccionId]: { ...cur, visto } }));
+      } else {
+        const rec = await pb.collection('progreso_lecciones').create(
+          { alumno_id: currentUser.id, leccion_id: leccionId, visto: true, fecha_visto: new Date().toISOString() },
+          { $autoCancel: false },
+        );
+        setProgreso((p) => ({ ...p, [leccionId]: { id: rec.id, visto: true } }));
+      }
+    } catch (_e) {
+      toast.error('No se pudo guardar el progreso');
+    }
+  };
 
   if (error) {
     return (
@@ -121,6 +159,8 @@ const CourseDetailPage = () => {
   const tema = TEMA[course?.color_tema] || TEMA.primary;
   const Icono = ICONOS[course?.icono] || BookOpen;
   const hasSyllabus = Boolean(course?.syllabus_markdown);
+  const vistosCount = Object.values(progreso).filter((p) => p.visto).length;
+  const avancePct = lessons.length ? Math.round((vistosCount / lessons.length) * 100) : 0;
 
   return (
     <>
@@ -180,6 +220,20 @@ const CourseDetailPage = () => {
                       </Badge>
                     )}
                   </div>
+
+                  {progresoOk && lessons.length > 0 && (
+                    <div className="mt-5 max-w-sm">
+                      <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Tu avance</span>
+                        <span className="font-medium text-foreground tabular-nums">
+                          {vistosCount}/{lessons.length} · {avancePct}%
+                        </span>
+                      </div>
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                        <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${avancePct}%` }} />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -224,11 +278,17 @@ const CourseDetailPage = () => {
                       >
                         <AccordionTrigger className="hover:no-underline py-4">
                           <div className="flex items-center gap-3 text-left">
-                            <span
-                              className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold tabular-nums ${tema.bg} ${tema.text}`}
-                            >
-                              {idx + 1}
-                            </span>
+                            {progreso[leccion.id]?.visto ? (
+                              <span className="flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center bg-success/15 text-success">
+                                <CheckCircle2 className="h-5 w-5" />
+                              </span>
+                            ) : (
+                              <span
+                                className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold tabular-nums ${tema.bg} ${tema.text}`}
+                              >
+                                {idx + 1}
+                              </span>
+                            )}
                             <span className="font-semibold text-foreground">
                               {leccion.titulo}
                             </span>
@@ -249,6 +309,25 @@ const CourseDetailPage = () => {
                             </div>
                           )}
                           <LeccionVideo url={leccion.video_url} titulo={leccion.titulo} />
+                          {progresoOk && (
+                            <Button
+                              variant={progreso[leccion.id]?.visto ? 'secondary' : 'outline'}
+                              size="sm"
+                              onClick={() => toggleVisto(leccion.id)}
+                            >
+                              {progreso[leccion.id]?.visto ? (
+                                <>
+                                  <CheckCircle2 className="mr-2 h-4 w-4 text-success" />
+                                  Lección vista
+                                </>
+                              ) : (
+                                <>
+                                  <Circle className="mr-2 h-4 w-4" />
+                                  Marcar como vista
+                                </>
+                              )}
+                            </Button>
+                          )}
                         </AccordionContent>
                       </AccordionItem>
                     ))}
