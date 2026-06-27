@@ -61,12 +61,12 @@ const LoginPage = () => {
         {/* Left column - Branding & Image (hidden on small screens) */}
         <div className="hidden lg:flex flex-col justify-between bg-muted relative overflow-hidden p-12">
           <div className="absolute inset-0 z-0">
-            <img 
-              src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070&auto=format&fit=crop" 
-              alt="Estudiantes universitarios conversando en el campus" 
-              className="object-cover w-full h-full opacity-20 mix-blend-multiply"
+            <img
+              src="/hero-puntaarenas.webp"
+              alt="Punta Arenas, Magallanes"
+              className="object-cover w-full h-full opacity-60"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-secondary/90 via-secondary/40 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-secondary/90 via-secondary/50 to-secondary/10"></div>
           </div>
           
           <div className="relative z-10 flex items-center gap-2">
