@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { z } from 'zod';
 import { BookOpen, FolderOpen, Users, Trash2, Plus, AlertCircle, CalendarCheck, GraduationCap, Pencil, FileUp, LayoutDashboard, UserCog, Archive, ArchiveRestore } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,13 @@ const ASIGNATURA_PAES_LABEL = {
   ciencias: 'Ciencias',
 };
 
+// Validación del material antes de crearlo (el enlace debe ser una URL real).
+const materialSchema = z.object({
+  titulo: z.string().trim().min(2, 'Título muy corto').max(150, 'Demasiado largo'),
+  tipo: z.enum(['PDF', 'Link'], { errorMap: () => ({ message: 'Elegí el tipo' }) }),
+  enlace: z.string().trim().url('Tiene que ser una URL válida (https://…)').max(500),
+});
+
 const AdminDashboard = () => {
   const { currentUser } = useAuth();
   const { confirm, dialog } = useConfirm();
@@ -58,6 +66,7 @@ const AdminDashboard = () => {
   // Tab 2: Materiales (form local + query por curso seleccionado)
   const [selectedCourseForMaterial, setSelectedCourseForMaterial] = useState('');
   const [materialForm, setMaterialForm] = useState({ titulo: '', tipo: '', enlace: '' });
+  const [materialErrors, setMaterialErrors] = useState({});
   const [isSubmittingMaterial, setIsSubmittingMaterial] = useState(false);
 
   const { data: materiales = [] } = useQuery({
@@ -168,14 +177,18 @@ const AdminDashboard = () => {
       toast.error('Selecciona un curso primero');
       return;
     }
-    if (!materialForm.titulo || !materialForm.tipo || !materialForm.enlace) {
-      toast.error('Completa todos los campos');
+    const parsed = materialSchema.safeParse(materialForm);
+    if (!parsed.success) {
+      const fe = parsed.error.flatten().fieldErrors;
+      setMaterialErrors(Object.fromEntries(Object.entries(fe).map(([k, v]) => [k, v?.[0]])));
+      toast.error('Revisá los datos del material');
       return;
     }
+    setMaterialErrors({});
     setIsSubmittingMaterial(true);
     try {
       await pb.collection('materiales').create({
-        ...materialForm,
+        ...parsed.data,
         curso_id: selectedCourseForMaterial
       }, { $autoCancel: false });
       toast.success('Material añadido exitosamente');
@@ -434,6 +447,7 @@ const AdminDashboard = () => {
                                 className="text-foreground"
                                 required
                               />
+                              {materialErrors.titulo && <p className="text-xs text-destructive">{materialErrors.titulo}</p>}
                             </div>
                             <div className="space-y-2">
                               <Label>Tipo de Material</Label>
@@ -446,6 +460,7 @@ const AdminDashboard = () => {
                                   <SelectItem value="Link">Enlace / Video</SelectItem>
                                 </SelectContent>
                               </Select>
+                              {materialErrors.tipo && <p className="text-xs text-destructive">{materialErrors.tipo}</p>}
                             </div>
                             <div className="space-y-2">
                               <Label htmlFor="enlaceMat">URL / Enlace</Label>
@@ -458,6 +473,7 @@ const AdminDashboard = () => {
                                 className="text-foreground"
                                 required
                               />
+                              {materialErrors.enlace && <p className="text-xs text-destructive">{materialErrors.enlace}</p>}
                             </div>
                             <Button type="submit" className="w-full bg-secondary hover:bg-secondary/90 transition-all duration-200 active:scale-[0.98]" disabled={isSubmittingMaterial}>
                               <Plus className="h-4 w-4 mr-2" /> Añadir al Curso

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -19,6 +20,13 @@ class ErrorBoundary extends React.Component {
   componentDidCatch(error, info) {
     // Log para diagnóstico; acá se podría enganchar un servicio de errores.
     console.error('[ErrorBoundary]', error, info?.componentStack);
+  }
+
+  componentDidUpdate(prevProps) {
+    // Si cambió la ruta (resetKey) y estábamos en error, nos recuperamos solos.
+    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ hasError: false });
+    }
   }
 
   handleRetry = () => this.setState({ hasError: false });
@@ -47,5 +55,12 @@ class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
+
+// Variante que se resetea sola al cambiar de ruta (sin remontar los hijos):
+// pasa la ruta como resetKey, así un error en una página no "pega" la siguiente.
+export const RouteErrorBoundary = ({ children }) => {
+  const location = useLocation();
+  return <ErrorBoundary resetKey={location.pathname}>{children}</ErrorBoundary>;
+};
 
 export default ErrorBoundary;

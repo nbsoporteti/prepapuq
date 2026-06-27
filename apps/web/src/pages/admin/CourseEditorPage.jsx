@@ -26,6 +26,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import pb from '@/lib/pocketbaseClient';
+import { useConfirm } from '@/components/shared/useConfirm.jsx';
 
 const MATERIAS = [
   { value: 'matematica_m1', label: 'Matemática M1' },
@@ -292,6 +293,7 @@ const LECCION_EMPTY = { titulo: '', descripcion: '', video_url: '', duracion_est
 
 const LeccionesManager = ({ cursoId }) => {
   const qc = useQueryClient();
+  const { confirm, dialog } = useConfirm();
   const [editing, setEditing] = useState(null); // null | 'new' | leccion
   const [lf, setLf] = useState(LECCION_EMPTY);
   const [saving, setSaving] = useState(false);
@@ -345,7 +347,6 @@ const LeccionesManager = ({ cursoId }) => {
   };
 
   const del = async (id) => {
-    if (!window.confirm('¿Eliminar esta lección? No se puede deshacer.')) return;
     try {
       await pb.collection('lecciones').delete(id, { $autoCancel: false });
       invalidate();
@@ -476,7 +477,13 @@ const LeccionesManager = ({ cursoId }) => {
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => startEdit(l)} title="Editar">
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => del(l.id)} title="Eliminar">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive"
+                    onClick={() => confirm({ title: 'Eliminar lección', description: 'Se elimina la lección. No se puede deshacer.', confirmLabel: 'Eliminar', destructive: true, action: () => del(l.id) })}
+                    title="Eliminar"
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -485,6 +492,7 @@ const LeccionesManager = ({ cursoId }) => {
           ))}
         </div>
       )}
+      {dialog}
     </div>
   );
 };
