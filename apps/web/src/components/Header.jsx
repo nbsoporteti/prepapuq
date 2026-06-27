@@ -36,6 +36,12 @@ const Header = () => {
 
   const isHomePage = location.pathname === '/';
   const isVisitorHome = isHomePage && !isAuthenticated; // header "logo centrado" (tipo 4)
+  // En las páginas de auth el header de marketing sobra: cada una trae su propia
+  // portada + "Volver al inicio", y si no se veía un logo PrePa duplicado encima.
+  const isAuthPage =
+    location.pathname === '/login' ||
+    location.pathname === '/forgot-password' ||
+    location.pathname === '/reset-password';
   const canManual = [rolActivo, currentUser?.rol, ...(rolesEffective || [])].some(
     (r) => r === 'admin' || r === 'profesor',
   );
@@ -93,6 +99,8 @@ const Header = () => {
       </button>
     ));
   };
+
+  if (isAuthPage) return null;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
