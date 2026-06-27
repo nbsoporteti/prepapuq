@@ -16,6 +16,7 @@ const CourseDetailPage = lazy(() => import('./pages/CourseDetailPage.jsx'));
 const ApoderadoDashboard = lazy(() => import('./pages/ApoderadoDashboard.jsx'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard.jsx'));
 const AdminPAESImportPage = lazy(() => import('./pages/admin/AdminPAESImportPage.jsx'));
+const CourseEditorPage = lazy(() => import('./pages/admin/CourseEditorPage.jsx'));
 const ProfesorDashboard = lazy(() => import('./pages/profesor/ProfesorDashboard.jsx'));
 const SeccionDetalle = lazy(() => import('./pages/profesor/SeccionDetalle.jsx'));
 const ProfesorCalificarTareaPage = lazy(() => import('./pages/profesor/ProfesorCalificarTareaPage.jsx'));
@@ -96,6 +97,15 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={["admin", "profesor"]}>
                     <AdminPAESImportPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/dashboard/admin/curso/:cursoId"
+                element={
+                  <ProtectedRoute allowedRole="admin">
+                    <CourseEditorPage />
                   </ProtectedRoute>
                 }
               />

@@ -35,10 +35,6 @@ const AdminDashboard = () => {
   const [cursos, setCursos] = useState([]);
   const [simulacrosPaes, setSimulacrosPaes] = useState([]);
 
-  // Tab 1 State: Cursos
-  const [courseForm, setCourseForm] = useState({ nombre: '', descripcion: '', portada: null });
-  const [isSubmittingCourse, setIsSubmittingCourse] = useState(false);
-
   // Tab 2 State: Materiales
   const [selectedCourseForMaterial, setSelectedCourseForMaterial] = useState('');
   const [materiales, setMateriales] = useState([]);
@@ -103,33 +99,8 @@ const AdminDashboard = () => {
   };
 
   // --- ACTIONS: CURSOS ---
-  const handleCreateCourse = async (e) => {
-    e.preventDefault();
-    if (!courseForm.nombre || !courseForm.descripcion) {
-      toast.error('Nombre y descripción son requeridos');
-      return;
-    }
-    setIsSubmittingCourse(true);
-    try {
-      const formData = new FormData();
-      formData.append('nombre', courseForm.nombre);
-      formData.append('descripcion', courseForm.descripcion);
-      if (courseForm.portada) {
-        formData.append('portada', courseForm.portada);
-      }
-      
-      await pb.collection('cursos').create(formData, { $autoCancel: false });
-      toast.success('Curso creado exitosamente');
-      setCourseForm({ nombre: '', descripcion: '', portada: null });
-      document.getElementById('portada').value = '';
-      fetchCursos();
-    } catch (err) {
-      toast.error('Error al crear el curso');
-      console.error(err);
-    } finally {
-      setIsSubmittingCourse(false);
-    }
-  };
+  // El alta y la edición de cursos (metadata + temario + lecciones) viven en
+  // CourseEditorPage (/dashboard/admin/curso/:id). Acá solo archivar/restaurar.
 
   // "Eliminar" = archivar (soft-delete). Borrar de verdad falla porque el curso
   // está referenciado por relaciones obligatorias (secciones, matrículas, etc.).
@@ -379,47 +350,20 @@ const AdminDashboard = () => {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <Card className="lg:col-span-1 h-fit border-border/50 shadow-sm">
                   <CardHeader>
-                    <CardTitle>Crear Nuevo Curso</CardTitle>
-                    <CardDescription>Añade un programa al catálogo educativo.</CardDescription>
+                    <CardTitle>Crear nuevo curso</CardTitle>
+                    <CardDescription>Editor completo: metadata, temario, portada y lecciones.</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <form onSubmit={handleCreateCourse} className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="nombre">Nombre del Curso <span className="text-destructive">*</span></Label>
-                        <Input 
-                          id="nombre" 
-                          value={courseForm.nombre}
-                          onChange={e => setCourseForm({...courseForm, nombre: e.target.value})}
-                          placeholder="Ej: Matemáticas M1" 
-                          className="text-foreground"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="descripcion">Descripción <span className="text-destructive">*</span></Label>
-                        <Input 
-                          id="descripcion" 
-                          value={courseForm.descripcion}
-                          onChange={e => setCourseForm({...courseForm, descripcion: e.target.value})}
-                          placeholder="Breve resumen del contenido" 
-                          className="text-foreground"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="portada">Imagen de Portada</Label>
-                        <Input 
-                          id="portada" 
-                          type="file" 
-                          accept="image/*"
-                          onChange={e => setCourseForm({...courseForm, portada: e.target.files[0]})}
-                          className="cursor-pointer text-foreground"
-                        />
-                      </div>
-                      <Button type="submit" className="w-full mt-4 transition-all duration-200 active:scale-[0.98]" disabled={isSubmittingCourse}>
-                        {isSubmittingCourse ? 'Creando...' : 'Guardar Curso'}
-                      </Button>
-                    </form>
+                    <Button asChild className="w-full transition-all duration-200 active:scale-[0.98]">
+                      <Link to="/dashboard/admin/curso/nuevo">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Nuevo curso
+                      </Link>
+                    </Button>
+                    <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
+                      Vas a poder cargar materia, nivel, temario, imagen y las lecciones en video,
+                      todo en una pantalla.
+                    </p>
                   </CardContent>
                 </Card>
 
@@ -435,15 +379,22 @@ const AdminDashboard = () => {
                       {cursosActivos.map(curso => (
                         <div key={curso.id} className="relative group">
                           <CourseCard course={curso} />
-                          <Button
-                            variant="secondary"
-                            size="icon"
-                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-sm"
-                            onClick={() => handleArchiveCourse(curso.id)}
-                            title="Archivar curso"
-                          >
-                            <Archive className="h-4 w-4" />
-                          </Button>
+                          <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                            <Button variant="secondary" size="icon" className="shadow-sm" asChild title="Editar curso">
+                              <Link to={`/dashboard/admin/curso/${curso.id}`}>
+                                <Pencil className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="icon"
+                              className="shadow-sm"
+                              onClick={() => handleArchiveCourse(curso.id)}
+                              title="Archivar curso"
+                            >
+                              <Archive className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>
