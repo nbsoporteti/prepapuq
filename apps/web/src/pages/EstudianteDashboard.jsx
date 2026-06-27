@@ -13,6 +13,7 @@ import CourseCard from '@/components/CourseCard.jsx';
 import TaskCard from '@/components/estudiante/TaskCard.jsx';
 import EstudianteNotas from './estudiante/EstudianteNotas.jsx';
 import EstudiantePAES from './estudiante/EstudiantePAES.jsx';
+import HorarioView from '@/components/estudiante/HorarioView.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useTareasAlumno } from '@/hooks/useTareasAlumno.js';
 import pb from '@/lib/pocketbaseClient';
@@ -130,6 +131,7 @@ const EstudianteDashboard = () => {
             <div className="border-b overflow-x-auto">
               <TabsList className="bg-transparent rounded-none h-auto p-0 gap-1 flex w-max">
                 <TabsTrigger value="hoy" className={tabTriggerCls}><Home className="h-4 w-4 mr-2" />Hoy</TabsTrigger>
+                <TabsTrigger value="horario" className={tabTriggerCls}><Calendar className="h-4 w-4 mr-2" />Horario</TabsTrigger>
                 <TabsTrigger value="cursos" className={tabTriggerCls}><BookOpen className="h-4 w-4 mr-2" />Mis cursos</TabsTrigger>
                 <TabsTrigger value="tareas" className={tabTriggerCls}>
                   <FileText className="h-4 w-4 mr-2" />Tareas
@@ -208,6 +210,11 @@ const EstudianteDashboard = () => {
                     )}
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              {/* Horario */}
+              <TabsContent value="horario" className="m-0">
+                <HorarioView alumnoId={currentUser?.id} />
               </TabsContent>
 
               {/* Cursos */}
