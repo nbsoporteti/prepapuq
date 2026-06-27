@@ -6,8 +6,24 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { CheckCircle2 } from 'lucide-react';
+import { z } from 'zod';
 import pb from '@/lib/pocketbaseClient';
 import { getUtmParams, getReferer } from '@/lib/utm';
+
+// Validación del lead antes de mandarlo a PocketBase (HTML5 cubre los vacíos;
+// Zod agrega formato: email válido, teléfono plausible, largos máximos).
+const leadSchema = z.object({
+  nombre: z.string().trim().min(2, 'Ingresá tu nombre completo').max(100, 'Demasiado largo'),
+  telefono: z
+    .string()
+    .trim()
+    .min(8, 'Ingresá un teléfono válido')
+    .max(20, 'Teléfono demasiado largo')
+    .regex(/^[+\d][\d\s()-]{6,}$/, 'Teléfono inválido'),
+  email: z.string().trim().email('Correo inválido').max(150),
+  interes: z.string().max(50).optional().or(z.literal('')),
+  mensaje: z.string().max(1000, 'Máximo 1000 caracteres').optional().or(z.literal('')),
+});
 
 const ContactForm = () => {
   const [formData, setFormData] = useState({
@@ -20,10 +36,12 @@ const ContactForm = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => (prev[name] ? { ...prev, [name]: undefined } : prev));
   };
 
   const handleSelectChange = (value) => {
@@ -42,14 +60,24 @@ const ContactForm = () => {
       return;
     }
 
+    const parsed = leadSchema.safeParse(formData);
+    if (!parsed.success) {
+      const fieldErrors = parsed.error.flatten().fieldErrors;
+      setErrors(Object.fromEntries(Object.entries(fieldErrors).map(([k, v]) => [k, v?.[0]])));
+      toast.error('Revisá los datos del formulario');
+      setIsSubmitting(false);
+      return;
+    }
+    setErrors({});
+
     try {
       const utm = getUtmParams();
       await pb.collection('leads').create({
-        nombre: formData.nombre,
-        email: formData.email,
-        telefono: formData.telefono,
-        interes: formData.interes || null,
-        mensaje: formData.mensaje || null,
+        nombre: parsed.data.nombre,
+        email: parsed.data.email,
+        telefono: parsed.data.telefono,
+        interes: parsed.data.interes || null,
+        mensaje: parsed.data.mensaje || null,
         utm_source: utm.utm_source || '',
         utm_medium: utm.utm_medium || '',
         utm_campaign: utm.utm_campaign || '',
@@ -122,6 +150,7 @@ const ContactForm = () => {
               className="w-full text-foreground"
               placeholder="Ej: María Pérez"
             />
+            {errors.nombre && <p className="text-xs text-destructive">{errors.nombre}</p>}
           </div>
 
           <div className="space-y-2">
@@ -138,6 +167,7 @@ const ContactForm = () => {
               className="w-full text-foreground"
               placeholder="+56 9 XXXX XXXX"
             />
+            {errors.telefono && <p className="text-xs text-destructive">{errors.telefono}</p>}
           </div>
         </div>
 
@@ -155,6 +185,7 @@ const ContactForm = () => {
             className="w-full text-foreground"
             placeholder="tucorreo@ejemplo.cl"
           />
+          {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
         </div>
 
         <div className="space-y-2">
@@ -186,6 +217,7 @@ const ContactForm = () => {
             className="w-full resize-none text-foreground"
             placeholder="¿Tu hijo/a entra a 4° medio? ¿Querés más info de horarios? Contanos."
           />
+          {errors.mensaje && <p className="text-xs text-destructive">{errors.mensaje}</p>}
         </div>
 
         <Button
