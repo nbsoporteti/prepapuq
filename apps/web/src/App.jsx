@@ -34,6 +34,7 @@ import ProtectedRoute from '@/components/ProtectedRoute.jsx';
 import { AuthProvider } from '@/contexts/AuthContext.jsx';
 import { PizarraProvider } from '@/contexts/PizarraContext.jsx';
 import Header from '@/components/Header.jsx';
+import ErrorBoundary from '@/components/shared/ErrorBoundary.jsx';
 import PizarraPanel from '@/components/pizarra/PizarraPanel.jsx';
 import ChatAsistente from '@/components/asistente/ChatAsistente.jsx';
 
@@ -48,6 +49,7 @@ function App() {
           <PizarraPanel />
           <ChatAsistente />
           <main className="flex-1">
+            <ErrorBoundary>
             <Suspense fallback={<div className="flex flex-1 items-center justify-center py-24 text-sm text-muted-foreground">Cargando…</div>}>
             <Routes>
               <Route path="/" element={<HomePage />} />
@@ -227,6 +229,7 @@ function App() {
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
             </Suspense>
+            </ErrorBoundary>
           </main>
         </div>
        </PizarraProvider>
