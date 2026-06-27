@@ -1,7 +1,7 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { useSearchParams } from 'react-router-dom';
-import { Home, Users, UserCircle2, UserPlus, CreditCard, FileText, BarChart3 } from 'lucide-react';
+import { Home, Users, UserCircle2, UserPlus, CreditCard, FileText, BarChart3, Inbox } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext.jsx';
@@ -13,6 +13,7 @@ import AdmMatriculas from './AdmMatriculas.jsx';
 import AdmPagos from './AdmPagos.jsx';
 import AdmJustificaciones from './AdmJustificaciones.jsx';
 import AdmReportes from './AdmReportes.jsx';
+import AdmLeads from './AdmLeads.jsx';
 
 const AdministrativoDashboard = () => {
   const { currentUser } = useAuth();
@@ -82,6 +83,9 @@ const AdministrativoDashboard = () => {
                     </Badge>
                   )}
                 </TabsTrigger>
+                <TabsTrigger value="leads" className={tabTriggerCls}>
+                  <Inbox className="h-4 w-4 mr-2" />Leads
+                </TabsTrigger>
                 <TabsTrigger value="reportes" className={tabTriggerCls}>
                   <BarChart3 className="h-4 w-4 mr-2" />Reportes
                 </TabsTrigger>
@@ -106,6 +110,9 @@ const AdministrativoDashboard = () => {
               </TabsContent>
               <TabsContent value="justificaciones" className="m-0">
                 <AdmJustificaciones />
+              </TabsContent>
+              <TabsContent value="leads" className="m-0">
+                <AdmLeads />
               </TabsContent>
               <TabsContent value="reportes" className="m-0">
                 <AdmReportes />
