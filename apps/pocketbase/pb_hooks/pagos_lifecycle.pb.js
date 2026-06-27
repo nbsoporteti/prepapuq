@@ -55,6 +55,59 @@ cronAdd("pagos_marcar_vencidos", "0 9 * * *", () => {
   }
 });
 
+// Recordatorio proactivo: 3 días antes del vencimiento avisa al apoderado.
+// Idempotente por agrupacion_key (no repite el aviso del mismo pago).
+cronAdd("pagos_recordar_proximos", "0 9 * * *", () => {
+  try {
+    const objetivo = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const proximos = $app.findRecordsByFilter(
+      "pagos",
+      "estado = 'pendiente' && fecha_vencimiento >= {:desde} && fecha_vencimiento <= {:hasta}",
+      "+fecha_vencimiento",
+      500,
+      0,
+      { desde: objetivo + " 00:00:00.000Z", hasta: objetivo + " 23:59:59.999Z" },
+    );
+
+    let avisos = 0;
+    for (const p of proximos) {
+      const userId = p.get("apoderado_id") || p.get("alumno_id");
+      if (!userId) continue;
+
+      const agrupKey = "cuota_proxima_" + p.id;
+      try {
+        const existing = $app.findFirstRecordByFilter(
+          "notificaciones",
+          "user_id = {:u} && agrupacion_key = {:k}",
+          { u: userId, k: agrupKey },
+        );
+        if (existing) continue; // ya avisado
+      } catch (_e) {}
+
+      try {
+        const notifCol = $app.findCollectionByNameOrId("notificaciones");
+        const n = new Record(notifCol);
+        n.set("user_id", userId);
+        n.set("tipo", "cuota_proxima");
+        n.set("canal", ["in_app", "email"]);
+        n.set("titulo", "Cuota próxima a vencer — " + (p.get("periodo") || p.get("concepto")));
+        n.set("cuerpo", "Tu cuota de " + (p.get("concepto") || "") + " " + (p.get("periodo") || "") + " vence el " + (p.get("fecha_vencimiento") || "") + ". Podés pagarla desde tu panel.");
+        n.set("link_destino", "/dashboard/apoderado?tab=pagos");
+        n.set("agrupacion_key", agrupKey);
+        n.set("payload", { pago_id: p.id, monto: p.get("monto") });
+        $app.saveNoValidate(n);
+        avisos++;
+      } catch (err) {
+        console.log("[pagos_lifecycle] recordatorio err: " + (err && err.message));
+      }
+    }
+
+    if (avisos) console.log("[pagos_lifecycle] recordatorios cuota_proxima: " + avisos);
+  } catch (err) {
+    console.log("[pagos_lifecycle] cron recordatorio fail: " + (err && err.message));
+  }
+});
+
 onRecordUpdate((e) => {
   const r = e.record;
   if (!r) {

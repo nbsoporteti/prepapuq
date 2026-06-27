@@ -74,7 +74,7 @@ const notifyNotaPublicada = function (record, tipoCalif) {
         const np = new Record(notifCol);
         np.set("user_id", parentId);
         np.set("tipo", "nota_publicada");
-        np.set("canal", ["in_app"]);
+        np.set("canal", ["in_app", "email"]);
         np.set("titulo", titulo);
         np.set("cuerpo", cuerpo + " — Pupilo");
         np.set("link_destino", "/dashboard/apoderado");
