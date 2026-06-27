@@ -1,6 +1,6 @@
-import React from 'react';
-import { useMutation } from '@tanstack/react-query';
-import { Download, FileSpreadsheet, Users, CreditCard, GraduationCap, MessageCircle } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { Download, FileSpreadsheet, Users, CreditCard, GraduationCap, MessageCircle, CalendarCheck, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -54,6 +54,175 @@ const ReportCard = ({ icon: Icon, title, description, onExport, isPending, accen
     </CardContent>
   </Card>
 );
+
+const pctColor = (pct) => (pct < 75 ? 'text-destructive' : pct < 85 ? 'text-accent' : 'text-success');
+
+/**
+ * Reporte analítico de asistencia (sobre la colección `asistencia`, la que
+ * carga el admin desde AttendanceTab: estado Presente/Ausente/Justificado).
+ * Calcula % promedio por curso y lista alumnos en riesgo (<75% con 4+ sesiones,
+ * mismo umbral que la alerta server-side). No requiere backend nuevo.
+ */
+const AsistenciaReporte = () => {
+  const { data: recs, isLoading } = useQuery({
+    queryKey: ['reportes', 'asistencia'],
+    queryFn: () =>
+      pb.collection('asistencia').getFullList({
+        expand: 'user_id,curso_id',
+        sort: '-fecha',
+        $autoCancel: false,
+      }),
+    staleTime: 60_000,
+  });
+
+  const { porCurso, enRiesgo, totalRegs } = useMemo(() => {
+    const list = recs || [];
+    const cursoAgg = new Map();
+    const alumnoAgg = new Map();
+    for (const r of list) {
+      const presente = r.estado === 'Presente';
+      const cursoNombre = r.expand?.curso_id?.nombre || '— sin curso —';
+      const cursoId = r.curso_id || cursoNombre;
+      const alumno = r.expand?.user_id?.name || '— sin nombre —';
+      const c = cursoAgg.get(cursoId) || { curso: cursoNombre, total: 0, presentes: 0 };
+      c.total += 1;
+      if (presente) c.presentes += 1;
+      cursoAgg.set(cursoId, c);
+      const key = `${r.user_id}|${cursoId}`;
+      const a = alumnoAgg.get(key) || { alumno, curso: cursoNombre, total: 0, presentes: 0 };
+      a.total += 1;
+      if (presente) a.presentes += 1;
+      alumnoAgg.set(key, a);
+    }
+    const withPct = (o) => ({ ...o, pct: o.total ? Math.round((o.presentes / o.total) * 100) : 0 });
+    return {
+      porCurso: [...cursoAgg.values()].map(withPct).sort((x, y) => x.pct - y.pct),
+      enRiesgo: [...alumnoAgg.values()]
+        .map(withPct)
+        .filter((a) => a.total >= 4 && a.pct < 75)
+        .sort((x, y) => x.pct - y.pct),
+      totalRegs: list.length,
+    };
+  }, [recs]);
+
+  const exportRiesgo = () => {
+    const csv = toCSV(
+      enRiesgo.map((a) => ({ alumno: a.alumno, curso: a.curso, presentes: a.presentes, total: a.total, pct: a.pct })),
+      [
+        { key: 'alumno', label: 'Alumno' },
+        { key: 'curso', label: 'Curso' },
+        { key: 'presentes', label: 'Presentes' },
+        { key: 'total', label: 'Sesiones' },
+        { key: 'pct', label: '% asistencia' },
+      ],
+    );
+    downloadCSV(`asistencia-riesgo-${new Date().toISOString().slice(0, 10)}.csv`, csv);
+    toast.success(`${enRiesgo.length} alumnos exportados`);
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-sm text-muted-foreground">Calculando asistencia…</CardContent>
+      </Card>
+    );
+  }
+
+  if (!totalRegs) {
+    return (
+      <Card className="border-dashed">
+        <CardContent className="p-6 text-center text-sm text-muted-foreground">
+          <CalendarCheck className="h-6 w-6 mx-auto mb-2 text-muted-foreground/60" />
+          Aún no hay registros de asistencia. Cargá asistencia desde el panel de admin para ver el análisis.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="grid lg:grid-cols-2 gap-4">
+      <Card>
+        <CardHeader>
+          <div className="flex items-start gap-3">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/10 text-secondary">
+              <CalendarCheck className="h-5 w-5" />
+            </span>
+            <div>
+              <CardTitle className="text-base">Asistencia promedio por curso</CardTitle>
+              <CardDescription className="mt-1">Sobre {totalRegs} registros de asistencia.</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs uppercase tracking-wider text-muted-foreground border-b">
+                <th className="py-2 font-medium">Curso</th>
+                <th className="py-2 font-medium text-right">Sesiones</th>
+                <th className="py-2 font-medium text-right">% asistencia</th>
+              </tr>
+            </thead>
+            <tbody>
+              {porCurso.map((c) => (
+                <tr key={c.curso} className="border-b last:border-0">
+                  <td className="py-2 text-foreground">{c.curso}</td>
+                  <td className="py-2 text-right tabular-nums text-muted-foreground">{c.total}</td>
+                  <td className={`py-2 text-right font-semibold tabular-nums ${pctColor(c.pct)}`}>{c.pct}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
+                <AlertTriangle className="h-5 w-5" />
+              </span>
+              <div>
+                <CardTitle className="text-base">Alumnos en riesgo</CardTitle>
+                <CardDescription className="mt-1">Bajo 75% de asistencia (con 4+ sesiones).</CardDescription>
+              </div>
+            </div>
+            {enRiesgo.length > 0 && (
+              <Button size="sm" variant="outline" onClick={exportRiesgo}>
+                <Download className="h-3.5 w-3.5 mr-2" />
+                CSV
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {enRiesgo.length === 0 ? (
+            <p className="py-2 text-sm text-muted-foreground">Ningún alumno bajo 75%.</p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs uppercase tracking-wider text-muted-foreground border-b">
+                  <th className="py-2 font-medium">Alumno</th>
+                  <th className="py-2 font-medium">Curso</th>
+                  <th className="py-2 font-medium text-right">%</th>
+                </tr>
+              </thead>
+              <tbody>
+                {enRiesgo.map((a) => (
+                  <tr key={`${a.alumno}|${a.curso}`} className="border-b last:border-0">
+                    <td className="py-2 text-foreground">{a.alumno}</td>
+                    <td className="py-2 text-muted-foreground">{a.curso}</td>
+                    <td className={`py-2 text-right font-semibold tabular-nums ${pctColor(a.pct)}`}>{a.pct}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
 
 const AdmReportes = () => {
   const expNomina = useMutation({
@@ -202,7 +371,9 @@ const AdmReportes = () => {
   });
 
   return (
-    <div className="grid md:grid-cols-2 gap-4">
+    <div className="space-y-6">
+      <AsistenciaReporte />
+      <div className="grid md:grid-cols-2 gap-4">
       <ReportCard
         icon={GraduationCap}
         title="Nómina por sección"
@@ -238,9 +409,10 @@ const AdmReportes = () => {
       <Card className="md:col-span-2 border-dashed">
         <CardContent className="p-6 text-center text-sm text-muted-foreground">
           <FileSpreadsheet className="h-6 w-6 mx-auto mb-2 text-muted-foreground/60" />
-          Reportes con gráficos Recharts y exportación XLSX llegan en Fase 5 (post-beta).
+          Gráficos Recharts y exportación XLSX llegan en una próxima fase.
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 };
