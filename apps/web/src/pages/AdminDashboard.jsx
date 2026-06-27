@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { BookOpen, FolderOpen, Users, Trash2, Plus, AlertCircle, CalendarCheck, GraduationCap, Pencil, FileUp, LayoutDashboard, UserCog, Archive, ArchiveRestore } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,26 +35,77 @@ const AdminDashboard = () => {
   const { currentUser } = useAuth();
   const { confirm, dialog } = useConfirm();
   
-  // Shared State
-  const [cursos, setCursos] = useState([]);
-  const [loadingCursos, setLoadingCursos] = useState(true);
-  const [simulacrosPaes, setSimulacrosPaes] = useState([]);
+  const qc = useQueryClient();
 
-  // Tab 2 State: Materiales
+  // --- DATOS (react-query: caché + invalidación, sin refetch manual ni carreras) ---
+  const { data: cursos = [], isLoading: loadingCursos } = useQuery({
+    queryKey: ['admin', 'cursos'],
+    queryFn: () => pb.collection('cursos').getFullList({ sort: '-created', $autoCancel: false }),
+  });
+
+  const { data: simulacrosPaes = [] } = useQuery({
+    queryKey: ['admin', 'simulacros'],
+    queryFn: async () => {
+      // La colección puede no existir todavía (backend sin redeploy): no es fatal.
+      try {
+        return await pb.collection('simulacros_paes').getFullList({ sort: '-created', $autoCancel: false });
+      } catch (_e) {
+        return [];
+      }
+    },
+  });
+
+  // Tab 2: Materiales (form local + query por curso seleccionado)
   const [selectedCourseForMaterial, setSelectedCourseForMaterial] = useState('');
-  const [materiales, setMateriales] = useState([]);
   const [materialForm, setMaterialForm] = useState({ titulo: '', tipo: '', enlace: '' });
   const [isSubmittingMaterial, setIsSubmittingMaterial] = useState(false);
 
-  // Tab 3 & 4 Shared State: Matriculación & Asistencia
+  const { data: materiales = [] } = useQuery({
+    queryKey: ['admin', 'materiales', selectedCourseForMaterial],
+    enabled: !!selectedCourseForMaterial,
+    queryFn: () =>
+      pb.collection('materiales').getFullList({
+        filter: `curso_id = "${selectedCourseForMaterial}"`,
+        sort: '-created',
+        $autoCancel: false,
+      }),
+  });
+
+  // Tab 3 & 4: Matriculación & Asistencia
   const [selectedCourseForAssign, setSelectedCourseForAssign] = useState('');
   const [selectedStudentForAssign, setSelectedStudentForAssign] = useState('');
-  const [asignaciones, setAsignaciones] = useState([]);
   const [isSubmittingAssign, setIsSubmittingAssign] = useState(false);
-  const [isLoadingAsignaciones, setIsLoadingAsignaciones] = useState(false);
+
+  const { data: asignaciones = [], isFetching: isLoadingAsignaciones } = useQuery({
+    queryKey: ['admin', 'asignaciones', selectedCourseForAssign],
+    enabled: !!selectedCourseForAssign,
+    queryFn: async () => {
+      const records = await pb.collection('asignaciones').getList(1, 500, {
+        filter: `curso_id="${selectedCourseForAssign}"`,
+        expand: 'user_id',
+        sort: '-created',
+        $autoCancel: false,
+      });
+      // Fallback: si el expand no vino, resolvemos los users a mano.
+      const missingExpand = records.items.some((r) => !r.expand?.user_id && r.user_id);
+      if (missingExpand) {
+        const userIds = [...new Set(records.items.map((r) => r.user_id).filter(Boolean))];
+        if (userIds.length > 0) {
+          const filterStr = userIds.map((id) => `id="${id}"`).join(' || ');
+          const users = await pb.collection('users').getFullList({ filter: filterStr, $autoCancel: false });
+          const userMap = Object.fromEntries(users.map((u) => [u.id, u]));
+          records.items.forEach((r) => {
+            if (!r.expand) r.expand = {};
+            if (!r.expand.user_id && userMap[r.user_id]) r.expand.user_id = userMap[r.user_id];
+          });
+        }
+      }
+      return records.items;
+    },
+  });
 
   // Derived Array of enrolled student IDs from the fetched asignaciones
-  const enrolledStudentIds = asignaciones.map(a => String(a.user_id));
+  const enrolledStudentIds = asignaciones.map((a) => String(a.user_id));
 
   // Cursos visibles vs archivados (soft-delete: "archivar" en vez de borrar).
   const cursosActivos = cursos.filter((c) => !c.archivado);
@@ -65,39 +117,16 @@ const AdminDashboard = () => {
     return enrolledStudentIds.includes(String(studentId));
   };
 
-  // Initial Load
+  // Al cambiar de curso para matricular, limpiamos el alumno seleccionado.
   useEffect(() => {
-    fetchCursos();
-    fetchSimulacrosPaes();
-  }, []);
-
-  const fetchCursos = async () => {
-    try {
-      const records = await pb.collection('cursos').getFullList({ sort: '-created', $autoCancel: false });
-      setCursos(records);
-    } catch (err) {
-      console.error('[ENROLLMENT DEBUG]', 'Error fetching courses:', err);
-      toast.error('Error al cargar cursos');
-    } finally {
-      setLoadingCursos(false);
-    }
-  };
-
-  const fetchSimulacrosPaes = async () => {
-    try {
-      const records = await pb.collection('simulacros_paes').getFullList({ sort: '-created', $autoCancel: false });
-      setSimulacrosPaes(records);
-    } catch (err) {
-      // La colección puede no existir todavía (backend sin redeploy): no es fatal.
-      setSimulacrosPaes([]);
-    }
-  };
+    setSelectedStudentForAssign('');
+  }, [selectedCourseForAssign]);
 
   const handleDeleteSimulacro = async (id) => {
     try {
       await pb.collection('simulacros_paes').delete(id, { $autoCancel: false });
       toast.success('Simulacro eliminado');
-      fetchSimulacrosPaes();
+      qc.invalidateQueries({ queryKey: ['admin', 'simulacros'] });
     } catch (err) {
       toast.error('Error al eliminar el simulacro');
     }
@@ -113,7 +142,7 @@ const AdminDashboard = () => {
     try {
       await pb.collection('cursos').update(id, { archivado: true }, { $autoCancel: false });
       toast.success('Curso archivado');
-      fetchCursos();
+      qc.invalidateQueries({ queryKey: ['admin', 'cursos'] });
       if (selectedCourseForMaterial === id) setSelectedCourseForMaterial('');
       if (selectedCourseForAssign === id) setSelectedCourseForAssign('');
     } catch (err) {
@@ -125,33 +154,13 @@ const AdminDashboard = () => {
     try {
       await pb.collection('cursos').update(id, { archivado: false }, { $autoCancel: false });
       toast.success('Curso restaurado');
-      fetchCursos();
+      qc.invalidateQueries({ queryKey: ['admin', 'cursos'] });
     } catch (err) {
       toast.error('No se pudo restaurar el curso: ' + (err?.message || 'error desconocido'));
     }
   };
 
   // --- ACTIONS: MATERIALES ---
-  useEffect(() => {
-    if (selectedCourseForMaterial) {
-      fetchMateriales(selectedCourseForMaterial);
-    } else {
-      setMateriales([]);
-    }
-  }, [selectedCourseForMaterial]);
-
-  const fetchMateriales = async (cursoId) => {
-    try {
-      const records = await pb.collection('materiales').getFullList({
-        filter: `curso_id = "${cursoId}"`,
-        sort: '-created',
-        $autoCancel: false
-      });
-      setMateriales(records);
-    } catch (err) {
-      toast.error('Error al cargar materiales');
-    }
-  };
 
   const handleCreateMaterial = async (e) => {
     e.preventDefault();
@@ -171,7 +180,7 @@ const AdminDashboard = () => {
       }, { $autoCancel: false });
       toast.success('Material añadido exitosamente');
       setMaterialForm({ titulo: '', tipo: '', enlace: '' });
-      fetchMateriales(selectedCourseForMaterial);
+      qc.invalidateQueries({ queryKey: ['admin', 'materiales', selectedCourseForMaterial] });
     } catch (err) {
       toast.error('Error al añadir material');
     } finally {
@@ -183,65 +192,13 @@ const AdminDashboard = () => {
     try {
       await pb.collection('materiales').delete(id, { $autoCancel: false });
       toast.success('Material eliminado');
-      fetchMateriales(selectedCourseForMaterial);
+      qc.invalidateQueries({ queryKey: ['admin', 'materiales', selectedCourseForMaterial] });
     } catch (err) {
       toast.error('Error al eliminar material');
     }
   };
 
-  // --- ACTIONS: MATRICULACIÓN Y ASISTENCIA ---
-  useEffect(() => {
-    setSelectedStudentForAssign(''); 
-    if (selectedCourseForAssign) {
-      fetchAsignaciones(selectedCourseForAssign);
-    } else {
-      setAsignaciones([]); 
-    }
-  }, [selectedCourseForAssign]);
-
-  const fetchAsignaciones = async (cursoId) => {
-    setIsLoadingAsignaciones(true);
-    try {
-      // Included expand: 'user_id' parameter
-      const records = await pb.collection('asignaciones').getList(1, 500, {
-        filter: `curso_id="${cursoId}"`,
-        expand: 'user_id',
-        sort: '-created',
-        $autoCancel: false
-      });
-      
-      const missingExpand = records.items.some(r => !r.expand?.user_id && r.user_id);
-      
-      if (missingExpand) {
-        const userIds = [...new Set(records.items.map(r => r.user_id).filter(Boolean))];
-        
-        if (userIds.length > 0) {
-          const filterStr = userIds.map(id => `id="${id}"`).join(' || ');
-          const users = await pb.collection('users').getFullList({
-            filter: filterStr,
-            $autoCancel: false
-          });
-          
-          const userMap = Object.fromEntries(users.map(u => [u.id, u]));
-          
-          records.items.forEach(r => {
-            if (!r.expand) r.expand = {};
-            if (!r.expand.user_id && userMap[r.user_id]) {
-              r.expand.user_id = userMap[r.user_id];
-            }
-          });
-        }
-      }
-      
-      setAsignaciones(records.items);
-    } catch (err) {
-      console.error('Error fetching asignaciones:', err);
-      toast.error('Error al cargar matriculados');
-      setAsignaciones([]); 
-    } finally {
-      setIsLoadingAsignaciones(false);
-    }
-  };
+  // --- ACTIONS: MATRICULACIÓN ---
 
   const handleAssignStudent = async (e) => {
     e.preventDefault();
@@ -275,7 +232,7 @@ const AdminDashboard = () => {
       
       toast.success('Estudiante matriculado exitosamente');
       setSelectedStudentForAssign(''); 
-      await fetchAsignaciones(selectedCourseForAssign);
+      qc.invalidateQueries({ queryKey: ['admin', 'asignaciones', selectedCourseForAssign] });
     } catch (err) {
       toast.error('Error al matricular estudiante: ' + (err.message || 'Error desconocido'));
     } finally {
@@ -287,7 +244,7 @@ const AdminDashboard = () => {
     try {
       await pb.collection('asignaciones').delete(id, { $autoCancel: false });
       toast.success('Matrícula removida exitosamente');
-      await fetchAsignaciones(selectedCourseForAssign);
+      qc.invalidateQueries({ queryKey: ['admin', 'asignaciones', selectedCourseForAssign] });
     } catch (err) {
       toast.error('Error al remover matrícula');
     }
