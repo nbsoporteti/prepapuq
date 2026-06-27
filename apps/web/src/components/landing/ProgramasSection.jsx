@@ -1,18 +1,16 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Check, Star, ArrowRight } from 'lucide-react';
 import {
   Compass,
   Target,
   Rocket,
-  Check,
-  Star,
-  ArrowRight,
   BookOpen,
   Calculator,
   Sigma,
-  FlaskConical,
-  Landmark,
-} from 'lucide-react';
+  Flask,
+  Bank,
+} from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 
 const scrollToContacto = () => {
@@ -76,8 +74,8 @@ const ASIGNATURAS = [
   { icon: BookOpen, nombre: 'Competencia Lectora' },
   { icon: Calculator, nombre: 'Matemática M1' },
   { icon: Sigma, nombre: 'Matemática M2' },
-  { icon: FlaskConical, nombre: 'Ciencias' },
-  { icon: Landmark, nombre: 'Historia y Cs. Sociales' },
+  { icon: Flask, nombre: 'Ciencias' },
+  { icon: Bank, nombre: 'Historia y Cs. Sociales' },
 ];
 
 const ProgramaCard = ({ plan }) => {
@@ -109,7 +107,7 @@ const ProgramaCard = ({ plan }) => {
               : 'bg-secondary/10 text-secondary border-secondary/20'
           }`}
         >
-          <Icon className="h-6 w-6" />
+          <Icon className="h-6 w-6" weight="duotone" />
         </span>
         <div>
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -195,7 +193,7 @@ const ProgramasSection = () => {
                   key={a.nombre}
                   className="inline-flex items-center gap-2 rounded-full border bg-card px-4 py-2.5 text-sm font-medium text-foreground shadow-sm"
                 >
-                  <Icon className="h-4 w-4 text-primary" />
+                  <Icon className="h-4 w-4 text-primary" weight="duotone" />
                   {a.nombre}
                 </div>
               );

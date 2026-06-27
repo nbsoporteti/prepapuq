@@ -3,18 +3,17 @@ import { Helmet } from 'react-helmet';
 import { useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
+import { ArrowRight, CheckCircle2, MessageCircle } from 'lucide-react';
 import {
-  ArrowRight,
-  CheckCircle2,
+  ChatCircle,
   Clock,
   GraduationCap,
   Laptop,
-  Layers,
   MapPin,
-  MessageCircle,
   ShieldCheck,
+  Stack,
   Users,
-} from 'lucide-react';
+} from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import {
   Accordion,
@@ -71,31 +70,37 @@ const PAES_HITOS_2026 = [
 const METODOLOGIA_FEATURES = [
   {
     icon: MapPin,
+    accent: 'primary',
     titulo: 'Profesores que viven acá',
     descripcion: 'No vienen y se van: están todo el año, en tu misma zona horaria, para responder dudas.',
   },
   {
     icon: Users,
+    accent: 'secondary',
     titulo: 'Grupos chicos, atención real',
     descripcion: 'Máximo 25 alumnos por grupo. Cada estudiante es conocido por nombre, no por número de lista.',
   },
   {
     icon: GraduationCap,
+    accent: 'accent',
     titulo: 'Foco en universidades chilenas',
     descripcion: 'Conocemos los procesos de la UC, U. de Chile, UMAG, USACH y las pasarelas SUR.',
   },
   {
     icon: Clock,
+    accent: 'primary',
     titulo: 'Horarios pensados para Magallanes',
     descripcion: 'Adaptados a las horas de luz, los días de viento blanco y los tiempos de viaje a la sede.',
   },
   {
     icon: ShieldCheck,
+    accent: 'secondary',
     titulo: 'Resultados auditables',
     descripcion: 'Publicamos las cifras con el N exacto. Cualquier apoderado puede verificarlas con DEMRE.',
   },
   {
-    icon: MessageCircle,
+    icon: ChatCircle,
+    accent: 'accent',
     titulo: 'Sin call center',
     descripcion: 'Te atiende una persona del equipo. Siempre, por WhatsApp directo.',
   },
@@ -381,7 +386,7 @@ const HomePage = () => {
                 accent="secondary"
               />
               <ModalidadCard
-                icon={Layers}
+                icon={Stack}
                 titulo="Mixta"
                 descripcion="Combinás presencial y online según tu semana. Perfecta si trabajás, hacés deporte federado o tenés agenda variable."
                 bullets={['Mayor flexibilidad', 'Mismo valor que online', 'Asistencia auto-ajustada']}
@@ -419,8 +424,8 @@ const HomePage = () => {
                     transition={{ duration: 0.45, delay: idx * 0.04 }}
                     className="rounded-2xl border bg-card p-6 shadow-sm"
                   >
-                    <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
-                      <Icon className="h-5 w-5" />
+                    <span className={`inline-flex h-11 w-11 items-center justify-center rounded-xl border ${ACCENT_CLASSES[f.accent]}`}>
+                      <Icon className="h-5 w-5" weight="duotone" />
                     </span>
                     <h3 className="mt-4 font-semibold text-foreground">{f.titulo}</h3>
                     <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{f.descripcion}</p>
@@ -482,7 +487,7 @@ const HomePage = () => {
               </div>
             ) : (
               <div className="max-w-2xl mx-auto p-8 rounded-2xl border bg-card shadow-sm text-center">
-                <GraduationCap className="h-8 w-8 text-primary mx-auto mb-3" />
+                <GraduationCap className="h-8 w-8 text-primary mx-auto mb-3" weight="duotone" />
                 <p className="text-lg font-medium text-foreground">
                   Estamos preparando nuestra primera promoción
                 </p>
@@ -634,7 +639,7 @@ const ModalidadCard = ({ icon: Icon, titulo, descripcion, bullets, accent = 'pri
     className="flex flex-col rounded-2xl border bg-card p-6 md:p-7 shadow-sm hover:shadow-md transition-shadow duration-base"
   >
     <span className={`inline-flex h-12 w-12 items-center justify-center rounded-xl border ${ACCENT_CLASSES[accent]}`}>
-      <Icon className="h-5 w-5" />
+      <Icon className="h-5 w-5" weight="duotone" />
     </span>
     <h3 className="mt-4 text-xl font-semibold text-foreground">{titulo}</h3>
     <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{descripcion}</p>
