@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, Clock, GraduationCap, Library, ListChecks, PlayCircle, Sparkles, Target, TrendingUp } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -55,12 +56,32 @@ const useSimulacrosDisponibles = () => useQuery({
   }),
 });
 
+// Trae las preguntas (solo lo necesario) de los simulacros que el alumno rindió,
+// para poder calcular el desempeño por eje cruzando con sus respuestas.
+const usePreguntasDeSimulacros = (simIds) => useQuery({
+  queryKey: ['paes', 'preguntas-ejes', [...simIds].sort().join(',')],
+  enabled: simIds.length > 0,
+  staleTime: 5 * 60_000,
+  queryFn: () => pb.collection('preguntas_paes').getFullList({
+    filter: simIds.map((id) => `simulacro_id = "${id}"`).join(' || '),
+    fields: 'simulacro_id,numero,eje,respuesta_correcta,piloto',
+    sort: 'numero',
+    $autoCancel: false,
+  }),
+});
+
 const EstudiantePAES = ({ pupiloId }) => {
   const { currentUser } = useAuth();
   const targetId = pupiloId || currentUser?.id;
   const { data: resultados = [], isLoading } = useResultadosPAES(targetId);
   const { data: simulacros = [] } = useSimulacrosDisponibles();
   const isApoderadoMode = !!pupiloId;
+
+  const simIds = useMemo(
+    () => [...new Set(resultados.map((r) => r.simulacro_id || r.expand?.simulacro_id?.id).filter(Boolean))],
+    [resultados],
+  );
+  const { data: preguntas = [] } = usePreguntasDeSimulacros(simIds);
 
   const [carreraObjetivo, setCarreraObjetivo] = useState('');
 
@@ -92,6 +113,51 @@ const EstudiantePAES = ({ pupiloId }) => {
     const sumas = Array.from(porAsignatura.values()).map((r) => r.puntaje);
     return Math.round(sumas.reduce((a, b) => a + b, 0) / sumas.length);
   }, [porAsignatura]);
+
+  // Desempeño por eje (tema), cruzando respuestas del alumno con la clave de
+  // cada pregunta. Ordenado de peor a mejor → "ejes a reforzar".
+  const ejeStats = useMemo(() => {
+    if (!preguntas.length || !resultados.length) return [];
+    const bySim = new Map();
+    for (const p of preguntas) {
+      const arr = bySim.get(p.simulacro_id) || [];
+      arr.push(p);
+      bySim.set(p.simulacro_id, arr);
+    }
+    const stats = new Map();
+    for (const r of resultados) {
+      const sid = r.simulacro_id || r.expand?.simulacro_id?.id;
+      const pregs = bySim.get(sid);
+      if (!pregs) continue;
+      const resp = Array.isArray(r.respuestas_alumno_json) ? r.respuestas_alumno_json : [];
+      for (const p of pregs) {
+        if (p.piloto) continue;
+        const eje = (p.eje || '').trim() || 'Sin eje';
+        const ans = resp[p.numero - 1];
+        const ok = ans && String(ans).toUpperCase() === String(p.respuesta_correcta).toUpperCase();
+        const s = stats.get(eje) || { correct: 0, total: 0 };
+        s.total += 1;
+        if (ok) s.correct += 1;
+        stats.set(eje, s);
+      }
+    }
+    return [...stats.entries()]
+      .map(([eje, s]) => ({ eje, correct: s.correct, total: s.total, pct: s.total ? Math.round((s.correct / s.total) * 100) : 0 }))
+      .sort((a, b) => a.pct - b.pct);
+  }, [preguntas, resultados]);
+
+  // Serie de evolución del puntaje en el tiempo.
+  const evolucion = useMemo(
+    () =>
+      [...resultados]
+        .filter((r) => r.puntaje > 0)
+        .sort((a, b) => new Date(a.created) - new Date(b.created))
+        .map((r) => ({
+          fecha: new Date(r.created).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' }),
+          puntaje: r.puntaje,
+        })),
+    [resultados],
+  );
 
   // Cortes filtrados según búsqueda
   const cortes = cortesData.carreras || [];
@@ -250,6 +316,65 @@ const EstudiantePAES = ({ pupiloId }) => {
             </CardContent>
           </Card>
 
+          {/* Evolución del puntaje */}
+          {evolucion.length >= 2 && (
+            <div>
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                Evolución de tu puntaje
+              </h3>
+              <Card>
+                <CardContent className="p-4 pl-2">
+                  <div className="h-56 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={evolucion} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                        <XAxis dataKey="fecha" tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
+                        <YAxis domain={[100, 1000]} ticks={[100, 400, 700, 1000]} tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={false} width={40} />
+                        <Tooltip contentStyle={{ fontSize: 12, borderRadius: 10, border: '1px solid #e2e8f0' }} formatter={(v) => [v, 'Puntaje']} />
+                        <Line type="monotone" dataKey="puntaje" stroke="#21b24c" strokeWidth={2.5} dot={{ r: 3, fill: '#21b24c' }} activeDot={{ r: 5 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Ejes a reforzar */}
+          {ejeStats.length > 0 && (
+            <div>
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <Target className="h-4 w-4 text-accent" />
+                Ejes a reforzar
+              </h3>
+              <Card>
+                <CardContent className="p-4 space-y-3">
+                  <p className="text-xs text-muted-foreground">
+                    Tu desempeño por tema sobre todos los simulacros interactivos. Empezá a estudiar por los de arriba.
+                  </p>
+                  {ejeStats.map((e) => {
+                    const barColor = e.pct < 50 ? 'bg-destructive' : e.pct < 75 ? 'bg-accent' : 'bg-success';
+                    const txtColor = e.pct < 50 ? 'text-destructive' : e.pct < 75 ? 'text-accent' : 'text-success';
+                    return (
+                      <div key={e.eje}>
+                        <div className="mb-1 flex items-center justify-between gap-2 text-sm">
+                          <span className="truncate font-medium text-foreground">{e.eje}</span>
+                          <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                            {e.correct}/{e.total} · <span className={`font-semibold ${txtColor}`}>{e.pct}%</span>
+                          </span>
+                        </div>
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                          <div className={`h-full rounded-full ${barColor}`} style={{ width: `${e.pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
           {/* Por asignatura */}
           <div>
             <h3 className="font-semibold mb-3 flex items-center gap-2">
@@ -328,8 +453,7 @@ const EstudiantePAES = ({ pupiloId }) => {
               <ArrowRight className="h-3.5 w-3.5 shrink-0 mt-0.5" />
               <span>
                 Cortes de referencia 2024-2025 (DEMRE). La proyección PAES es un proxy basado en
-                el promedio de tus mejores resultados — no garantiza el puntaje oficial. El gráfico
-                de evolución con Recharts llega en una iteración futura.
+                el promedio de tus mejores resultados — no garantiza el puntaje oficial.
               </span>
             </CardContent>
           </Card>
