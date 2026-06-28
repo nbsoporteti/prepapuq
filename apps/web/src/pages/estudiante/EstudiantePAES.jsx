@@ -360,9 +360,16 @@ const EstudiantePAES = ({ pupiloId }) => {
                       <div key={e.eje}>
                         <div className="mb-1 flex items-center justify-between gap-2 text-sm">
                           <span className="truncate font-medium text-foreground">{e.eje}</span>
-                          <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                            {e.correct}/{e.total} · <span className={`font-semibold ${txtColor}`}>{e.pct}%</span>
-                          </span>
+                          <div className="flex shrink-0 items-center gap-2">
+                            <span className="text-xs text-muted-foreground tabular-nums">
+                              {e.correct}/{e.total} · <span className={`font-semibold ${txtColor}`}>{e.pct}%</span>
+                            </span>
+                            {!isApoderadoMode && (
+                              <Button asChild size="sm" variant="ghost" className="h-6 px-2 text-xs text-primary hover:text-primary">
+                                <Link to={`/dashboard/estudiante/practica?eje=${encodeURIComponent(e.eje)}`}>Practicar</Link>
+                              </Button>
+                            )}
+                          </div>
                         </div>
                         <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                           <div className={`h-full rounded-full ${barColor}`} style={{ width: `${e.pct}%` }} />

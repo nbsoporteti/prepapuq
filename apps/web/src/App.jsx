@@ -24,6 +24,7 @@ const CalificarEvaluacionBulk = lazy(() => import('./pages/profesor/CalificarEva
 const EstudianteTareasPage = lazy(() => import('./pages/estudiante/EstudianteTareasPage.jsx'));
 const EstudianteTareaDetailPage = lazy(() => import('./pages/estudiante/EstudianteTareaDetailPage.jsx'));
 const EstudiantePAESRendir = lazy(() => import('./pages/estudiante/EstudiantePAESRendir.jsx'));
+const PracticaPaesPage = lazy(() => import('./pages/estudiante/PracticaPaesPage.jsx'));
 const BibliotecaPage = lazy(() => import('./pages/BibliotecaPage.jsx'));
 const AdministrativoDashboard = lazy(() => import('./pages/administrativo/AdministrativoDashboard.jsx'));
 const NotificacionesPage = lazy(() => import('./pages/NotificacionesPage.jsx'));
@@ -180,6 +181,15 @@ function App() {
                 element={
                   <ProtectedRoute allowedRole="estudiante">
                     <EstudiantePAESRendir />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/dashboard/estudiante/practica"
+                element={
+                  <ProtectedRoute allowedRole="estudiante">
+                    <PracticaPaesPage />
                   </ProtectedRoute>
                 }
               />
