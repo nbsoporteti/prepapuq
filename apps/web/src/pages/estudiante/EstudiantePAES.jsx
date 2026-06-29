@@ -84,6 +84,9 @@ const EstudiantePAES = ({ pupiloId }) => {
   const { data: preguntas = [] } = usePreguntasDeSimulacros(simIds);
 
   const [carreraObjetivo, setCarreraObjetivo] = useState('');
+  const [planIA, setPlanIA] = useState('');
+  const [planLoading, setPlanLoading] = useState(false);
+  const [planError, setPlanError] = useState(false);
 
   // Mapa simulacro_id → resultado, para saber cuáles ya rindió el alumno.
   const resultadoPorSimulacro = useMemo(() => {
@@ -161,6 +164,22 @@ const EstudiantePAES = ({ pupiloId }) => {
 
   // Cortes filtrados según búsqueda
   const cortes = cortesData.carreras || [];
+
+  // Plan de estudio con IA a partir de los ejes más débiles.
+  const pedirPlan = async () => {
+    setPlanLoading(true);
+    setPlanError(false);
+    try {
+      const lista = ejeStats.slice(0, 8).map((e) => `- ${e.eje}: ${e.pct}% (${e.correct}/${e.total})`).join('\n');
+      const content = `Estos son mis resultados por tema en simulacros PAES, de peor a mejor:\n${lista}\n\nDame un plan de estudio corto y priorizado para subir mi puntaje, empezando por lo más débil. Máximo 5 puntos, con un consejo concreto por tema.`;
+      const res = await pb.send('/api/tutor', { method: 'POST', body: { messages: [{ role: 'user', content }] } });
+      setPlanIA(res?.reply || '');
+    } catch (_e) {
+      setPlanError(true);
+    } finally {
+      setPlanLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -377,6 +396,27 @@ const EstudiantePAES = ({ pupiloId }) => {
                       </div>
                     );
                   })}
+
+                  {!isApoderadoMode && (
+                    <div className="pt-1">
+                      {!planIA && (
+                        <Button variant="outline" size="sm" onClick={pedirPlan} disabled={planLoading}>
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          {planLoading ? 'Armando tu plan…' : 'Plan de estudio con IA'}
+                        </Button>
+                      )}
+                      {planError && <p className="mt-1 text-xs text-destructive">No se pudo generar el plan. Probá de nuevo.</p>}
+                      {planIA && (
+                        <div className="mt-1 rounded-xl border border-primary/20 bg-primary/5 p-3">
+                          <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-primary">
+                            <Sparkles className="h-3.5 w-3.5" />
+                            Tu plan de estudio
+                          </p>
+                          <p className="whitespace-pre-wrap text-sm text-foreground">{planIA}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
