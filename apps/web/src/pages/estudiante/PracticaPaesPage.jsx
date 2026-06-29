@@ -165,6 +165,7 @@ const PracticaPaesPage = () => {
           </Card>
         ) : p ? (
           <PreguntaPractica
+            key={p.id}
             p={p}
             selected={selected}
             revealed={revealed}
@@ -182,6 +183,26 @@ const PreguntaPractica = ({ p, selected, revealed, onResponder, onSiguiente, ult
   const alts = Array.isArray(p.alternativas_json) ? p.alternativas_json : [];
   const contextoImg = fileUrl(p, p.imagen_contexto);
   const enunciadoImg = fileUrl(p, p.imagen_enunciado);
+
+  const [aiReply, setAiReply] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState(false);
+
+  const explicarConIA = async () => {
+    setAiLoading(true);
+    setAiError(false);
+    try {
+      const altsTxt = alts.map((a) => `${a.letra}) ${a.texto || '[imagen]'}`).join('\n');
+      const enun = (p.enunciado || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      const content = `Pregunta:\n${enun}\n\nAlternativas:\n${altsTxt}\n\nLa alternativa correcta es la ${p.respuesta_correcta}.${selected ? ` Yo marqué la ${selected}.` : ''}\n\nExplicame por qué la correcta es la ${p.respuesta_correcta} y qué concepto debería reforzar.`;
+      const res = await pb.send('/api/tutor', { method: 'POST', body: { messages: [{ role: 'user', content }] } });
+      setAiReply(res?.reply || '');
+    } catch (_e) {
+      setAiError(true);
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -247,6 +268,26 @@ const PreguntaPractica = ({ p, selected, revealed, onResponder, onSiguiente, ult
                   Respuesta correcta: <span className="font-semibold text-success">{p.respuesta_correcta}</span>
                 </p>
               )}
+
+              {!aiReply && (
+                <Button variant="outline" size="sm" onClick={explicarConIA} disabled={aiLoading}>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  {aiLoading ? 'Pensando…' : 'Explicámelo con IA'}
+                </Button>
+              )}
+              {aiError && (
+                <p className="text-xs text-destructive">No se pudo obtener la explicación. Probá de nuevo.</p>
+              )}
+              {aiReply && (
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
+                  <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-primary">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Tutor IA
+                  </p>
+                  <p className="whitespace-pre-wrap text-sm text-foreground">{aiReply}</p>
+                </div>
+              )}
+
               <div className="flex justify-end">
                 <Button onClick={onSiguiente}>
                   {ultima ? 'Ver resultado' : 'Siguiente'}
