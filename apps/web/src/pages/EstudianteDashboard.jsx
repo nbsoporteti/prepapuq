@@ -2,7 +2,9 @@ import React, { useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen, ClipboardList, FileText, Home, Sparkles, ExternalLink, Calendar } from 'lucide-react';
+import { FileText, ExternalLink, Calendar, BookOpen } from 'lucide-react';
+import { House, CalendarDots, BookOpen as PhBookOpen, ClipboardText, ListChecks, Target } from '@phosphor-icons/react';
+import DashboardNav from '@/components/shared/DashboardNav.jsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,8 +22,6 @@ import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useTareasAlumno } from '@/hooks/useTareasAlumno.js';
 import pb from '@/lib/pocketbaseClient';
 import { SITE } from '@/lib/site';
-
-const tabTriggerCls = 'data-[state=active]:bg-transparent data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-4 py-3 whitespace-nowrap';
 
 const formatFecha = (iso) => {
   if (!iso) return '';
@@ -114,41 +114,31 @@ const EstudianteDashboard = () => {
 
   const totalPendientes = tareas.filter((t) => !t.entrega || t.entrega.estado === 'en_progreso').length;
 
+  const navItems = [
+    { value: 'hoy', label: 'Hoy', icon: House },
+    { value: 'horario', label: 'Horario', icon: CalendarDots },
+    { value: 'cursos', label: 'Mis cursos', icon: PhBookOpen },
+    { value: 'tareas', label: 'Tareas', icon: ClipboardText, badge: totalPendientes || undefined },
+    { value: 'notas', label: 'Mi libreta', icon: ListChecks },
+    { value: 'paes', label: 'PAES', icon: Target },
+  ];
+
   return (
     <>
       <Helmet><title>Mi panel | PrePa</title></Helmet>
 
       <div className="min-h-screen bg-muted/30 pb-12">
-        <div className="bg-card border-b">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-2">Estudiante</p>
-            <h1 className="font-display text-3xl md:text-4xl font-bold text-balance">
-              Hola, <span className="text-primary">{currentUser?.name?.split(' ')[0] || 'estudiante'}</span>
-            </h1>
-          </div>
-        </div>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <Tabs value={tab} onValueChange={setTab} className="lg:flex lg:gap-6">
+            <DashboardNav items={navItems} value={tab} onChange={setTab} />
 
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-          <Tabs value={tab} onValueChange={setTab}>
-            <div className="border-b overflow-x-auto">
-              <TabsList className="bg-transparent rounded-none h-auto p-0 gap-1 flex w-max">
-                <TabsTrigger value="hoy" className={tabTriggerCls}><Home className="h-4 w-4 mr-2" />Hoy</TabsTrigger>
-                <TabsTrigger value="horario" className={tabTriggerCls}><Calendar className="h-4 w-4 mr-2" />Horario</TabsTrigger>
-                <TabsTrigger value="cursos" className={tabTriggerCls}><BookOpen className="h-4 w-4 mr-2" />Mis cursos</TabsTrigger>
-                <TabsTrigger value="tareas" className={tabTriggerCls}>
-                  <FileText className="h-4 w-4 mr-2" />Tareas
-                  {totalPendientes > 0 && (
-                    <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-[10px] font-mono bg-warning/10 text-warning-foreground">
-                      {totalPendientes}
-                    </Badge>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="notas" className={tabTriggerCls}><ClipboardList className="h-4 w-4 mr-2" />Mi libreta</TabsTrigger>
-                <TabsTrigger value="paes" className={tabTriggerCls}><Sparkles className="h-4 w-4 mr-2" />PAES</TabsTrigger>
-              </TabsList>
-            </div>
-
-            <div className="py-6">
+            <div className="min-w-0 flex-1">
+              <div className="mb-5">
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">Estudiante</p>
+                <h1 className="font-display text-2xl md:text-3xl font-bold tracking-tight text-balance">
+                  Hola, <span className="text-primary">{currentUser?.name?.split(' ')[0] || 'estudiante'}</span>
+                </h1>
+              </div>
               {/* Hoy */}
               <TabsContent value="hoy" className="m-0 space-y-6">
                 <RachaCard userId={currentUser?.id} />
