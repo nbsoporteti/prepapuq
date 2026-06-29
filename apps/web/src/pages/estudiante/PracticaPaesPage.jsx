@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '@/components/shared/EmptyState.jsx';
 import pb from '@/lib/pocketbaseClient';
+import { useAuth } from '@/contexts/AuthContext.jsx';
+import { registrarActividad } from '@/lib/gamificacion';
 
 // URL de archivo PB (compat getURL/getUrl según versión del SDK).
 const fileUrl = (record, name) => {
@@ -41,6 +43,7 @@ const usePreguntasPorEje = (eje) =>
 const PracticaPaesPage = () => {
   const [params] = useSearchParams();
   const eje = params.get('eje') || '';
+  const { currentUser } = useAuth();
 
   const { data: preguntas = [], isLoading } = usePreguntasPorEje(eje);
 
@@ -71,6 +74,7 @@ const PracticaPaesPage = () => {
   const siguiente = () => {
     if (idx + 1 >= sesion.length) {
       setTerminado(true);
+      registrarActividad(currentUser?.id, correctos * 5 + 5); // puntos por la sesión
     } else {
       setIdx((i) => i + 1);
       setSelected(null);

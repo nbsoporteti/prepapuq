@@ -27,6 +27,7 @@ import {
 import { toast } from 'sonner';
 import pb from '@/lib/pocketbaseClient';
 import { useAuth } from '@/contexts/AuthContext.jsx';
+import { registrarActividad } from '@/lib/gamificacion';
 import MaterialCard from '@/components/MaterialCard.jsx';
 import { MaterialListSkeleton } from '@/components/LoadingSkeletons.jsx';
 import LeccionVideo from '@/components/curso/LeccionVideo.jsx';
@@ -127,12 +128,14 @@ const CourseDetailPage = () => {
           { $autoCancel: false },
         );
         setProgreso((p) => ({ ...p, [leccionId]: { ...cur, visto } }));
+        if (visto) registrarActividad(currentUser.id, 10);
       } else {
         const rec = await pb.collection('progreso_lecciones').create(
           { alumno_id: currentUser.id, leccion_id: leccionId, visto: true, fecha_visto: new Date().toISOString() },
           { $autoCancel: false },
         );
         setProgreso((p) => ({ ...p, [leccionId]: { id: rec.id, visto: true } }));
+        registrarActividad(currentUser.id, 10);
       }
     } catch (_e) {
       toast.error('No se pudo guardar el progreso');
