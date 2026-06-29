@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useQuery } from '@tanstack/react-query';
-import { Calendar, CheckCircle2, ClipboardList, CreditCard, FileText, Sparkles, TrendingUp, Users, XCircle } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar, CheckCircle2, ClipboardList, CreditCard, FileText, Sparkles, Users, XCircle } from 'lucide-react';
+import { Gauge, CalendarCheck, ListChecks, Target, CreditCard as CreditCardPh } from '@phosphor-icons/react';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import DashboardNav from '@/components/shared/DashboardNav.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,8 +24,6 @@ const formatFecha = (iso) => {
   if (!iso) return '—';
   try { return new Date(iso).toLocaleDateString('es-CL'); } catch (_e) { return iso; }
 };
-
-const tabTriggerCls = 'data-[state=active]:bg-transparent data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-4 py-3 whitespace-nowrap';
 
 const usePupilos = (apoderadoId) => useQuery({
   queryKey: ['apoderado', 'pupilos', apoderadoId],
@@ -88,6 +88,14 @@ const ApoderadoDashboard = () => {
 
   const pupiloActivo = pupilos.find((p) => p.id === pupiloId);
 
+  const navItems = [
+    { value: 'resumen', label: 'Resumen', icon: Gauge },
+    { value: 'asistencia', label: 'Asistencia', icon: CalendarCheck },
+    { value: 'notas', label: 'Libreta', icon: ListChecks },
+    { value: 'paes', label: 'PAES', icon: Target },
+    { value: 'pagos', label: 'Pagos', icon: CreditCardPh },
+  ];
+
   return (
     <>
       <Helmet><title>Panel del apoderado | PrePa</title></Helmet>
@@ -147,18 +155,10 @@ const ApoderadoDashboard = () => {
               </div>
             )}
 
-            <Tabs value={tab} onValueChange={setTab}>
-              <div className="border-b overflow-x-auto">
-                <TabsList className="bg-transparent rounded-none h-auto p-0 gap-1 flex w-max">
-                  <TabsTrigger value="resumen" className={tabTriggerCls}><TrendingUp className="h-4 w-4 mr-2" />Resumen</TabsTrigger>
-                  <TabsTrigger value="asistencia" className={tabTriggerCls}><Calendar className="h-4 w-4 mr-2" />Asistencia</TabsTrigger>
-                  <TabsTrigger value="notas" className={tabTriggerCls}><ClipboardList className="h-4 w-4 mr-2" />Libreta</TabsTrigger>
-                  <TabsTrigger value="paes" className={tabTriggerCls}><Sparkles className="h-4 w-4 mr-2" />PAES</TabsTrigger>
-                  <TabsTrigger value="pagos" className={tabTriggerCls}><CreditCard className="h-4 w-4 mr-2" />Pagos</TabsTrigger>
-                </TabsList>
-              </div>
+            <Tabs value={tab} onValueChange={setTab} className="lg:flex lg:gap-6">
+              <DashboardNav items={navItems} value={tab} onChange={setTab} />
 
-              <div className="py-6">
+              <div className="min-w-0 flex-1">
                 <TabsContent value="resumen" className="m-0">
                   <ResumenPupilo pupiloId={pupiloId} pupiloName={pupiloActivo?.name} />
                 </TabsContent>

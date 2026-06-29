@@ -3,14 +3,16 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
-import { BookOpen, FolderOpen, Users, Trash2, Plus, AlertCircle, CalendarCheck, GraduationCap, Pencil, FileUp, LayoutDashboard, UserCog, Archive, ArchiveRestore } from 'lucide-react';
+import { BookOpen, FolderOpen, Trash2, Plus, AlertCircle, GraduationCap, Pencil, FileUp, Archive, ArchiveRestore } from 'lucide-react';
+import { Gauge, BookOpen as BookOpenPh, FolderOpen as FolderOpenPh, Users as UsersPh, CalendarCheck as CalendarCheckPh, GraduationCap as GraduationCapPh, UserGear } from '@phosphor-icons/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import DashboardNav from '@/components/shared/DashboardNav.jsx';
 import { toast } from 'sonner';
 import pb from '@/lib/pocketbaseClient';
 import { useAuth } from '@/contexts/AuthContext.jsx';
@@ -44,6 +46,7 @@ const AdminDashboard = () => {
   const { confirm, dialog } = useConfirm();
   
   const qc = useQueryClient();
+  const [tab, setTab] = useState('resumen');
 
   // --- DATOS (react-query: caché + invalidación, sin refetch manual ni carreras) ---
   const { data: cursos = [], isLoading: loadingCursos } = useQuery({
@@ -263,6 +266,16 @@ const AdminDashboard = () => {
     }
   };
 
+  const navItems = [
+    { value: 'resumen', label: 'Resumen', icon: Gauge },
+    { value: 'cursos', label: 'Cursos', icon: BookOpenPh },
+    { value: 'materiales', label: 'Materiales', icon: FolderOpenPh },
+    { value: 'alumnos', label: 'Matriculación', icon: UsersPh },
+    { value: 'asistencia', label: 'Asistencia', icon: CalendarCheckPh },
+    { value: 'paes', label: 'Ensayos PAES', icon: GraduationCapPh },
+    { value: 'usuarios', label: 'Usuarios', icon: UserGear },
+  ];
+
   return (
     <>
       <Helmet>
@@ -280,38 +293,10 @@ const AdminDashboard = () => {
         </div>
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Tabs defaultValue="resumen" className="w-full">
-            <TabsList className="mb-8 grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 max-w-6xl bg-card shadow-sm h-auto p-1 border border-border/50">
-              <TabsTrigger value="resumen" className="py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all">
-                <LayoutDashboard className="w-4 h-4 mr-2" />
-                Resumen
-              </TabsTrigger>
-              <TabsTrigger value="cursos" className="py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all">
-                <BookOpen className="w-4 h-4 mr-2" />
-                Cursos
-              </TabsTrigger>
-              <TabsTrigger value="materiales" className="py-3 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary transition-all">
-                <FolderOpen className="w-4 h-4 mr-2" />
-                Materiales
-              </TabsTrigger>
-              <TabsTrigger value="alumnos" className="py-3 data-[state=active]:bg-orange-100 data-[state=active]:text-orange-700 transition-all">
-                <Users className="w-4 h-4 mr-2" />
-                Matriculación
-              </TabsTrigger>
-              <TabsTrigger value="asistencia" className="py-3 data-[state=active]:bg-green-100 data-[state=active]:text-green-700 transition-all">
-                <CalendarCheck className="w-4 h-4 mr-2" />
-                Asistencia
-              </TabsTrigger>
-              <TabsTrigger value="paes" className="py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all">
-                <GraduationCap className="w-4 h-4 mr-2" />
-                Ensayos PAES
-              </TabsTrigger>
-              <TabsTrigger value="usuarios" className="py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all">
-                <UserCog className="w-4 h-4 mr-2" />
-                Usuarios
-              </TabsTrigger>
-            </TabsList>
+          <Tabs value={tab} onValueChange={setTab} className="lg:flex lg:gap-6">
+            <DashboardNav items={navItems} value={tab} onChange={setTab} />
 
+            <div className="min-w-0 flex-1">
             {/* TAB 0: RESUMEN */}
             <TabsContent value="resumen" className="space-y-8 animate-in fade-in-50 duration-500">
               <AdminOverviewTab />
@@ -711,6 +696,7 @@ const AdminDashboard = () => {
             <TabsContent value="usuarios" className="space-y-8 animate-in fade-in-50 duration-500">
               <UsuariosTab />
             </TabsContent>
+            </div>
           </Tabs>
         </div>
       </div>

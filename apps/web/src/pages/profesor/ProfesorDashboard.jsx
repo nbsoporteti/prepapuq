@@ -1,9 +1,9 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { useSearchParams } from 'react-router-dom';
-import { BookOpen, CalendarDays, ClipboardList, Home, User } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
+import { House, BookOpen, ClipboardText, UserCircle } from '@phosphor-icons/react';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import DashboardNav from '@/components/shared/DashboardNav.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useProfesorOverview } from '@/hooks/useProfesorOverview.js';
 import ProfesorVistaDia from './ProfesorVistaDia.jsx';
@@ -29,6 +29,13 @@ const ProfesorDashboard = () => {
 
   const pendientesBadge = overview?.entregasPendientes || 0;
 
+  const navItems = [
+    { value: 'hoy', label: 'Hoy', icon: House },
+    { value: 'cursos', label: 'Mis cursos', icon: BookOpen },
+    { value: 'calificar', label: 'Calificar', icon: ClipboardText, badge: pendientesBadge || undefined },
+    { value: 'perfil', label: 'Mi perfil', icon: UserCircle },
+  ];
+
   return (
     <>
       <Helmet>
@@ -48,32 +55,10 @@ const ProfesorDashboard = () => {
         </div>
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-          <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="bg-transparent border-b w-full justify-start rounded-none h-auto p-0 gap-1">
-              <TabsTrigger value="hoy" className="data-[state=active]:bg-transparent data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-4 py-3">
-                <Home className="h-4 w-4 mr-2" />
-                Hoy
-              </TabsTrigger>
-              <TabsTrigger value="cursos" className="data-[state=active]:bg-transparent data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-4 py-3">
-                <BookOpen className="h-4 w-4 mr-2" />
-                Mis cursos
-              </TabsTrigger>
-              <TabsTrigger value="calificar" className="data-[state=active]:bg-transparent data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-4 py-3">
-                <ClipboardList className="h-4 w-4 mr-2" />
-                Calificar
-                {pendientesBadge > 0 && (
-                  <Badge variant="destructive" className="ml-2 h-5 px-1.5 text-[10px] font-mono">
-                    {pendientesBadge}
-                  </Badge>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="perfil" className="data-[state=active]:bg-transparent data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-4 py-3">
-                <User className="h-4 w-4 mr-2" />
-                Mi perfil
-              </TabsTrigger>
-            </TabsList>
+          <Tabs value={tab} onValueChange={handleTabChange} className="lg:flex lg:gap-6">
+            <DashboardNav items={navItems} value={tab} onChange={handleTabChange} />
 
-            <div className="py-6">
+            <div className="min-w-0 flex-1">
               <TabsContent value="hoy" className="m-0">
                 <ProfesorVistaDia overview={overview} isLoading={isLoading} />
               </TabsContent>
