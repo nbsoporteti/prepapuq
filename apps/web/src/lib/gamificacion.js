@@ -7,11 +7,14 @@ const ayerISO = () => new Date(Date.now() - 86400000).toLocaleDateString('en-CA'
 // Logros: id estable + test sobre el estado + label visible.
 export const LOGROS = [
   { id: 'primer_paso', label: 'Primer paso', test: (g) => g.puntos >= 10 },
+  { id: 'puntos_100', label: '100 puntos', test: (g) => g.puntos >= 100 },
   { id: 'racha_3', label: 'Racha de 3 días', test: (g) => g.racha_actual >= 3 },
   { id: 'racha_7', label: 'Racha de 7 días', test: (g) => g.racha_actual >= 7 },
+  { id: 'racha_14', label: 'Racha de 14 días', test: (g) => g.racha_actual >= 14 },
   { id: 'racha_30', label: 'Racha de 30 días', test: (g) => g.racha_actual >= 30 },
   { id: 'puntos_500', label: '500 puntos', test: (g) => g.puntos >= 500 },
   { id: 'puntos_2000', label: '2000 puntos', test: (g) => g.puntos >= 2000 },
+  { id: 'puntos_5000', label: '5000 puntos', test: (g) => g.puntos >= 5000 },
 ];
 
 /**

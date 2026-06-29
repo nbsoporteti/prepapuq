@@ -15,6 +15,7 @@ import EstudianteNotas from './estudiante/EstudianteNotas.jsx';
 import EstudiantePAES from './estudiante/EstudiantePAES.jsx';
 import HorarioView from '@/components/estudiante/HorarioView.jsx';
 import RachaCard from '@/components/estudiante/RachaCard.jsx';
+import LogrosRanking from '@/components/estudiante/LogrosRanking.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useTareasAlumno } from '@/hooks/useTareasAlumno.js';
 import pb from '@/lib/pocketbaseClient';
@@ -151,6 +152,7 @@ const EstudianteDashboard = () => {
               {/* Hoy */}
               <TabsContent value="hoy" className="m-0 space-y-6">
                 <RachaCard userId={currentUser?.id} />
+                <LogrosRanking userId={currentUser?.id} />
                 <Card className="border-primary/20">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-base">
