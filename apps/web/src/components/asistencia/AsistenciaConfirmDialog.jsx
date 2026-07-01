@@ -47,6 +47,8 @@ const AsistenciaConfirmDialog = ({ open, onOpenChange, payload, resumen, onConfi
   const errorLegible = (err) => {
     const code = err?.response?.error || '';
     if (code === 'pin_incorrecto') return 'PIN incorrecto. Intentá de nuevo.';
+    if (code === 'bloqueado') return 'Demasiados intentos fallidos. Esperá 5 minutos e intentá de nuevo.';
+    if (code === 'pin_actual_incorrecto') return 'El PIN actual no coincide.';
     if (code === 'sin_pin') return 'Todavía no tenés PIN. Creá uno para confirmar.';
     if (code === 'sin_permiso' || code === 'no_es_tu_clase') return 'No tenés permiso para confirmar esta lista.';
     if (code === 'fecha_invalida' || code === 'scope_invalido') return 'Datos de la lista inválidos.';

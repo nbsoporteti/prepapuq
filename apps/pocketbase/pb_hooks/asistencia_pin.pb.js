@@ -39,6 +39,34 @@ function findPinRecord(userId) {
   }
 }
 
+// Lockout anti fuerza-bruta: 5 fallos → bloqueo de 5 minutos.
+const MAX_FALLOS = 5;
+const LOCK_MS = 5 * 60 * 1000;
+
+function estaBloqueado(pinRec) {
+  const hasta = pinRec.getString("bloqueado_hasta");
+  return !!hasta && new Date(hasta).getTime() > Date.now();
+}
+
+function registrarFallo(pinRec) {
+  const n = (pinRec.get("intentos_fallidos") || 0) + 1;
+  if (n >= MAX_FALLOS) {
+    pinRec.set("intentos_fallidos", 0);
+    pinRec.set("bloqueado_hasta", new Date(Date.now() + LOCK_MS).toISOString());
+  } else {
+    pinRec.set("intentos_fallidos", n);
+  }
+  try { $app.save(pinRec); } catch (_e) { /* best-effort */ }
+}
+
+function registrarExito(pinRec) {
+  if ((pinRec.get("intentos_fallidos") || 0) !== 0 || pinRec.getString("bloqueado_hasta")) {
+    pinRec.set("intentos_fallidos", 0);
+    pinRec.set("bloqueado_hasta", "");
+    try { $app.save(pinRec); } catch (_e) { /* best-effort */ }
+  }
+}
+
 // ¿El usuario ya tiene PIN configurado?
 routerAdd("GET", "/api/asistencia/pin-estado", (e) => {
   const u = e.auth;
@@ -59,9 +87,12 @@ routerAdd("POST", "/api/asistencia/pin", (e) => {
 
   const existing = findPinRecord(u.id);
   if (existing) {
+    if (estaBloqueado(existing)) return e.json(429, { error: "bloqueado" });
     if (!PIN_RE.test(actual) || existing.getString("hash") !== pinHash(actual, u.id)) {
+      registrarFallo(existing);
       return e.json(403, { error: "pin_actual_incorrecto" });
     }
+    registrarExito(existing);
     existing.set("hash", pinHash(pin, u.id));
     $app.save(existing);
   } else {
@@ -87,9 +118,12 @@ routerAdd("POST", "/api/asistencia/confirmar", (e) => {
 
   const pinRec = findPinRecord(u.id);
   if (!pinRec) return e.json(409, { error: "sin_pin" });
+  if (estaBloqueado(pinRec)) return e.json(429, { error: "bloqueado" });
   if (pinRec.getString("hash") !== pinHash(pin, u.id)) {
+    registrarFallo(pinRec);
     return e.json(403, { error: "pin_incorrecto" });
   }
+  registrarExito(pinRec);
 
   const isAdmin = hasRole(u, "admin");
   const scope = String(body.scope || "");
