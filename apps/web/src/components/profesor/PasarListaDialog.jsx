@@ -1,13 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Skeleton } from '@/components/ui/skeleton';
-import { toast } from 'sonner';
 import { Search, CheckCircle2, XCircle, Clock, FileText, LogOut } from 'lucide-react';
+import AsistenciaConfirmDialog from '@/components/asistencia/AsistenciaConfirmDialog.jsx';
 import pb from '@/lib/pocketbaseClient';
 
 const ESTADOS = [
@@ -34,7 +34,7 @@ const PasarListaDialog = ({ open, onOpenChange, clase, onSaved }) => {
   const qc = useQueryClient();
   const [busqueda, setBusqueda] = useState('');
   const [estados, setEstados] = useState({}); // { alumno_id: estado }
-  const [recordIds, setRecordIds] = useState({}); // { alumno_id: record_id_o_null }
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const { data: filas = [], isLoading, refetch } = useQuery({
     queryKey: ['profesor', 'pasar-lista', clase?.id],
@@ -55,13 +55,10 @@ const PasarListaDialog = ({ open, onOpenChange, clase, onSaved }) => {
   useEffect(() => {
     if (!filas.length) return;
     const next = {};
-    const ids = {};
     for (const f of filas) {
       next[f.alumno_id] = f.estado || 'ausente';
-      ids[f.alumno_id] = f.id;
     }
     setEstados(next);
-    setRecordIds(ids);
   }, [filas]);
 
   const filtradas = useMemo(() => {
@@ -92,36 +89,8 @@ const PasarListaDialog = ({ open, onOpenChange, clase, onSaved }) => {
     setEstados(next);
   };
 
-  const saveMutation = useMutation({
-    mutationFn: async () => {
-      const tasks = Object.entries(estados).map(async ([alumnoId, estado]) => {
-        const id = recordIds[alumnoId];
-        const payload = { estado, marcada_por: pb.authStore.model?.id, hora_marca: new Date().toISOString() };
-        if (id) {
-          return pb.collection('asistencia_clase_vivo').update(id, payload, { $autoCancel: false });
-        }
-        return pb.collection('asistencia_clase_vivo').create({
-          clase_vivo_id: clase.id,
-          alumno_id: alumnoId,
-          ...payload,
-        }, { $autoCancel: false });
-      });
-      await Promise.all(tasks);
-    },
-    onSuccess: () => {
-      toast.success('Asistencia guardada');
-      qc.invalidateQueries({ queryKey: ['profesor'] });
-      qc.invalidateQueries({ queryKey: ['seccion'] });
-      onSaved?.();
-      onOpenChange(false);
-    },
-    onError: (e) => {
-      console.error('PasarLista error', e);
-      toast.error('No se pudo guardar la asistencia');
-    },
-  });
-
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
@@ -202,15 +171,33 @@ const PasarListaDialog = ({ open, onOpenChange, clase, onSaved }) => {
         </div>
 
         <DialogFooter className="border-t pt-3">
-          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={saveMutation.isPending}>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || filas.length === 0}>
-            {saveMutation.isPending ? 'Guardando...' : `Guardar (${Object.keys(estados).length})`}
+          <Button onClick={() => setConfirmOpen(true)} disabled={filas.length === 0}>
+            Confirmar y guardar ({Object.keys(estados).length})
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <AsistenciaConfirmDialog
+      open={confirmOpen}
+      onOpenChange={setConfirmOpen}
+      payload={{ scope: 'clase', claseId: clase?.id, estados }}
+      resumen={(
+        <span>
+          {Object.keys(estados).length} alumnos · P {counts.presente} · A {counts.ausente} · T {counts.tardanza} · J {counts.justificado}
+        </span>
+      )}
+      onConfirmed={() => {
+        qc.invalidateQueries({ queryKey: ['profesor'] });
+        qc.invalidateQueries({ queryKey: ['seccion'] });
+        onSaved?.();
+        onOpenChange(false);
+      }}
+    />
+    </>
   );
 };
 

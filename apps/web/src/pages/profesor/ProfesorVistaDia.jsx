@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, ClipboardList, Clock, ExternalLink, Users, Video } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { BookOpen, ClipboardList, Clock, ExternalLink, Users, Video, CalendarDays } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '@/components/shared/EmptyState.jsx';
 import PasarListaDialog from '@/components/profesor/PasarListaDialog.jsx';
+import { useAuth } from '@/contexts/AuthContext.jsx';
+import pb from '@/lib/pocketbaseClient';
+import { ymd, rangoDia } from '@/lib/asistenciaPin';
 
 const formatFecha = (iso) => {
   if (!iso) return '';
@@ -18,7 +24,25 @@ const formatFecha = (iso) => {
 };
 
 const ProfesorVistaDia = ({ overview, isLoading }) => {
+  const { currentUser } = useAuth();
+  const uid = currentUser?.id;
   const [claseEnLista, setClaseEnLista] = useState(null);
+  const [fecha, setFecha] = useState(() => new Date());
+  const fechaStr = ymd(fecha);
+
+  const { data: clasesDia = [], isLoading: loadingDia } = useQuery({
+    queryKey: ['profesor', 'clases-dia', uid, fechaStr],
+    enabled: !!uid,
+    queryFn: () => {
+      const { d0, d1 } = rangoDia(fechaStr);
+      return pb.collection('clases_vivo').getFullList({
+        filter: `profesor_id = "${uid}" && fecha >= "${d0}" && fecha < "${d1}"`,
+        expand: 'seccion_id',
+        sort: '+hora_inicio',
+        $autoCancel: false,
+      });
+    },
+  });
 
   const proxima = overview?.proximaClase;
   const stats = [
@@ -179,10 +203,52 @@ const ProfesorVistaDia = ({ overview, isLoading }) => {
         </Card>
       </div>
 
+      {/* Agenda por fecha (calendario) */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <CalendarDays className="h-4 w-4 text-primary" />
+            Agenda por fecha
+          </CardTitle>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="capitalize">
+                <CalendarDays className="mr-2 h-4 w-4 text-muted-foreground" />
+                {fecha.toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'long' })}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar mode="single" selected={fecha} onSelect={(d) => d && setFecha(d)} initialFocus />
+            </PopoverContent>
+          </Popover>
+        </CardHeader>
+        <CardContent>
+          {loadingDia ? (
+            <div className="space-y-2">{[1, 2].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+          ) : clasesDia.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-2">No hay clases ese día.</p>
+          ) : (
+            <ul className="divide-y -mx-2">
+              {clasesDia.map((c) => (
+                <li key={c.id} className="flex items-center gap-3 px-2 py-2.5">
+                  <span className="font-mono text-xs text-muted-foreground tabular-nums">{c.hora_inicio}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{c.tema || c.expand?.seccion_id?.nombre || 'Clase'}</p>
+                    <p className="text-xs text-muted-foreground truncate">{c.expand?.seccion_id?.nombre}</p>
+                  </div>
+                  <Button size="sm" variant="ghost" onClick={() => setClaseEnLista(c)}>Pasar lista</Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
       <PasarListaDialog
         open={!!claseEnLista}
         onOpenChange={(o) => !o && setClaseEnLista(null)}
         clase={claseEnLista}
+        onSaved={() => {}}
       />
     </div>
   );
