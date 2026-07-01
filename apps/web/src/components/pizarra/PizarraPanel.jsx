@@ -52,11 +52,14 @@ const BACKGROUNDS = [
 ];
 
 // Resolución interna del lienzo (independiente del tamaño en pantalla, para que
-// el dibujo guardado sea estable al re-escalar el panel).
-const CANVAS_W = 720;
-const CANVAS_H = 940;
-const UNDO_LIMIT = 20;
-const GRID = 24; // px de la cuadrícula / interlineado
+// el dibujo guardado sea estable al re-escalar el panel). Hoja tipo A4 vertical
+// para que funcione como cuaderno de ejercicios.
+const CANVAS_W = 1000;
+const CANVAS_H = 1414;
+// ponytail: undo guarda ImageData full-canvas (~5.6 MB c/u a 1000×1414). 12 ≈ 68 MB
+// de techo; subir si hace falta más historial y la memoria lo permite.
+const UNDO_LIMIT = 12;
+const GRID = 28; // px de la cuadrícula / interlineado (en pantalla)
 
 const isShape = (t) => t === 'line' || t === 'rect' || t === 'ellipse' || t === 'arrow';
 
@@ -160,7 +163,11 @@ const PizarraPanel = () => {
       const saved = localStorage.getItem(drawKey);
       if (saved) {
         const img = new Image();
-        img.onload = () => ctx.drawImage(img, 0, 0);
+        img.onload = () => {
+          // Re-escala al ancho actual (dibujos viejos se guardaron a menor resolución).
+          const w = canvas.width;
+          ctx.drawImage(img, 0, 0, w, img.height * (w / img.width));
+        };
         img.src = saved;
       }
     } catch (_e) {
@@ -463,259 +470,281 @@ const PizarraPanel = () => {
   const colorActive = (v) => tool !== 'eraser' && color === v;
 
   return (
-    <aside
-      ref={panelRef}
-      tabIndex={-1}
-      role="dialog"
-      aria-modal="false"
-      aria-label="Pizarra de apoyo"
+    <div
       aria-hidden={!open}
       className={cn(
-        'fixed right-0 top-0 z-[60] flex h-[100dvh] w-full flex-col border-l border-border bg-card shadow-lg outline-none transition-transform duration-300 ease-out sm:w-[420px]',
-        open ? 'translate-x-0' : 'pointer-events-none translate-x-full',
+        'fixed inset-0 z-[60] flex transition-opacity duration-300 ease-out sm:p-4',
+        open ? 'opacity-100' : 'pointer-events-none opacity-0',
       )}
     >
-      {/* Encabezado */}
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <div className="flex items-center gap-2">
-          <PenLine className="h-5 w-5 text-primary" />
-          <h2 className="font-semibold">Pizarra</h2>
+      {/* Backdrop (click afuera cierra) */}
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-label="Cerrar pizarra"
+        onClick={() => setOpen(false)}
+        className="absolute inset-0 cursor-default bg-black/40"
+      />
+
+      <aside
+        ref={panelRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Pizarra de apoyo"
+        className="relative m-auto flex h-full w-full max-w-[1200px] flex-col overflow-hidden border border-border bg-card shadow-2xl outline-none sm:h-[95dvh] sm:rounded-2xl"
+      >
+        {/* Encabezado */}
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <div className="flex items-baseline gap-2">
+            <span className="flex items-center gap-2">
+              <PenLine className="h-5 w-5 text-primary" />
+              <h2 className="font-semibold">Pizarra</h2>
+            </span>
+            <span className="hidden text-xs text-muted-foreground sm:inline">tu cuaderno para practicar</span>
+          </div>
+          <Button variant="ghost" size="icon" onClick={() => setOpen(false)} aria-label="Cerrar pizarra">
+            <X className="h-5 w-5" />
+          </Button>
         </div>
-        <Button variant="ghost" size="icon" onClick={() => setOpen(false)} aria-label="Cerrar pizarra">
-          <X className="h-5 w-5" />
-        </Button>
-      </div>
 
-      <Tabs defaultValue="dibujo" className="flex min-h-0 flex-1 flex-col">
-        <div className="px-4 pt-3">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="dibujo" className="gap-1.5">
-              <Pencil className="h-4 w-4" />
-              Dibujo
-            </TabsTrigger>
-            <TabsTrigger value="notas" className="gap-1.5">
-              <StickyNote className="h-4 w-4" />
-              Notas
-            </TabsTrigger>
-          </TabsList>
-        </div>
+        <Tabs defaultValue="dibujo" className="flex min-h-0 flex-1 flex-col">
+          <div className="px-4 pt-3">
+            <TabsList className="grid w-full max-w-xs grid-cols-2">
+              <TabsTrigger value="dibujo" className="gap-1.5">
+                <Pencil className="h-4 w-4" />
+                Dibujo
+              </TabsTrigger>
+              <TabsTrigger value="notas" className="gap-1.5">
+                <StickyNote className="h-4 w-4" />
+                Notas
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-        {/* --- Dibujo --- */}
-        <TabsContent value="dibujo" className="mt-0 flex min-h-0 flex-1 flex-col gap-3 p-4">
-          <div className="space-y-3">
-            {/* Herramientas */}
-            <div className="grid grid-cols-8 gap-1 rounded-lg bg-muted p-1">
-              {TOOLS.map((tl) => {
-                const Icon = tl.icon;
-                return (
-                  <Button
-                    key={tl.id}
-                    type="button"
-                    variant={tool === tl.id ? 'default' : 'ghost'}
-                    size="icon"
-                    className="h-8 w-full"
-                    onClick={() => setTool(tl.id)}
-                    aria-label={tl.label}
-                    aria-pressed={tool === tl.id}
-                    title={tl.label}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </Button>
-                );
-              })}
-            </div>
-
-            {/* Acciones */}
-            <div className="flex items-center gap-1">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={handleUndo}
-                disabled={!canUndo}
-                aria-label="Deshacer"
-                title="Deshacer"
-              >
-                <Undo2 className="h-4 w-4" />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={handleRedo}
-                disabled={!canRedo}
-                aria-label="Rehacer"
-                title="Rehacer"
-              >
-                <Redo2 className="h-4 w-4" />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={handleDownload}
-                aria-label="Descargar PNG"
-                title="Descargar PNG"
-              >
-                <Download className="h-4 w-4" />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="ml-auto h-8 w-8 text-muted-foreground hover:text-destructive"
-                onClick={handleClear}
-                aria-label="Limpiar todo"
-                title="Limpiar todo"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {/* Colores */}
-            <div className="flex flex-wrap items-center gap-2">
-              {COLORS.map((c) => (
-                <button
-                  key={c.value}
-                  type="button"
-                  onClick={() => selectColor(c.value)}
-                  aria-label={`Color ${c.name}`}
-                  aria-pressed={colorActive(c.value)}
-                  className={cn(
-                    'h-7 w-7 rounded-full border-2 transition-transform hover:scale-110 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                    colorActive(c.value) ? 'scale-110 border-foreground' : 'border-transparent',
-                  )}
-                  style={{ backgroundColor: c.value }}
-                />
-              ))}
-              {/* Color personalizado (nativo) */}
-              <label
-                className={cn(
-                  'relative h-7 w-7 cursor-pointer overflow-hidden rounded-full border-2',
-                  !COLORS.some((c) => c.value === color) && tool !== 'eraser'
-                    ? 'scale-110 border-foreground'
-                    : 'border-dashed border-muted-foreground/50',
-                )}
-                style={{ background: 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)' }}
-                title="Color personalizado"
-              >
-                <input
-                  type="color"
-                  value={color}
-                  onChange={(e) => selectColor(e.target.value)}
-                  className="absolute inset-0 cursor-pointer opacity-0"
-                  aria-label="Color personalizado"
-                />
-              </label>
-            </div>
-
-            {/* Grosor + Fondo */}
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-muted-foreground">Grosor</span>
-              <Slider
-                value={[size]}
-                onValueChange={([v]) => setSize(v)}
-                min={1}
-                max={28}
-                step={1}
-                className="flex-1"
-                aria-label="Grosor del trazo"
-              />
-              <span className="w-6 text-right font-mono text-xs tabular-nums text-muted-foreground">
-                {size}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-1">
-              <span className="mr-1 text-xs text-muted-foreground">Fondo</span>
-              <div className="flex gap-1 rounded-lg bg-muted p-1">
-                {BACKGROUNDS.map((b) => {
-                  const Icon = b.icon;
+          {/* --- Dibujo --- */}
+          <TabsContent value="dibujo" className="mt-0 flex min-h-0 flex-1 flex-col lg:flex-row">
+            {/* Barra de herramientas */}
+            <div className="shrink-0 space-y-3 border-b border-border p-3 lg:w-64 lg:overflow-y-auto lg:border-b-0 lg:border-r">
+              {/* Herramientas */}
+              <div className="grid grid-cols-8 gap-1 rounded-lg bg-muted p-1 lg:grid-cols-4">
+                {TOOLS.map((tl) => {
+                  const Icon = tl.icon;
                   return (
                     <Button
-                      key={b.id}
+                      key={tl.id}
                       type="button"
-                      variant={bg === b.id ? 'default' : 'ghost'}
+                      variant={tool === tl.id ? 'default' : 'ghost'}
                       size="icon"
-                      className="h-7 w-7"
-                      onClick={() => selectBg(b.id)}
-                      aria-label={b.label}
-                      aria-pressed={bg === b.id}
-                      title={b.label}
+                      className="h-8 w-full"
+                      onClick={() => setTool(tl.id)}
+                      aria-label={tl.label}
+                      aria-pressed={tool === tl.id}
+                      title={tl.label}
                     >
                       <Icon className="h-4 w-4" />
                     </Button>
                   );
                 })}
               </div>
+
+              {/* Acciones */}
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={handleUndo}
+                  disabled={!canUndo}
+                  aria-label="Deshacer"
+                  title="Deshacer"
+                >
+                  <Undo2 className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={handleRedo}
+                  disabled={!canRedo}
+                  aria-label="Rehacer"
+                  title="Rehacer"
+                >
+                  <Redo2 className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={handleDownload}
+                  aria-label="Descargar PNG"
+                  title="Descargar PNG"
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="ml-auto h-8 w-8 text-muted-foreground hover:text-destructive"
+                  onClick={handleClear}
+                  aria-label="Limpiar todo"
+                  title="Limpiar todo"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Colores */}
+              <div className="flex flex-wrap items-center gap-2">
+                {COLORS.map((c) => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    onClick={() => selectColor(c.value)}
+                    aria-label={`Color ${c.name}`}
+                    aria-pressed={colorActive(c.value)}
+                    className={cn(
+                      'h-7 w-7 rounded-full border-2 transition-transform hover:scale-110 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                      colorActive(c.value) ? 'scale-110 border-foreground' : 'border-transparent',
+                    )}
+                    style={{ backgroundColor: c.value }}
+                  />
+                ))}
+                {/* Color personalizado (nativo) */}
+                <label
+                  className={cn(
+                    'relative h-7 w-7 cursor-pointer overflow-hidden rounded-full border-2',
+                    !COLORS.some((c) => c.value === color) && tool !== 'eraser'
+                      ? 'scale-110 border-foreground'
+                      : 'border-dashed border-muted-foreground/50',
+                  )}
+                  style={{ background: 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)' }}
+                  title="Color personalizado"
+                >
+                  <input
+                    type="color"
+                    value={color}
+                    onChange={(e) => selectColor(e.target.value)}
+                    className="absolute inset-0 cursor-pointer opacity-0"
+                    aria-label="Color personalizado"
+                  />
+                </label>
+              </div>
+
+              {/* Grosor */}
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-muted-foreground">Grosor</span>
+                <Slider
+                  value={[size]}
+                  onValueChange={([v]) => setSize(v)}
+                  min={1}
+                  max={28}
+                  step={1}
+                  className="flex-1"
+                  aria-label="Grosor del trazo"
+                />
+                <span className="w-6 text-right font-mono text-xs tabular-nums text-muted-foreground">
+                  {size}
+                </span>
+              </div>
+
+              {/* Fondo */}
+              <div className="flex items-center gap-1">
+                <span className="mr-1 text-xs text-muted-foreground">Fondo</span>
+                <div className="flex gap-1 rounded-lg bg-muted p-1">
+                  {BACKGROUNDS.map((b) => {
+                    const Icon = b.icon;
+                    return (
+                      <Button
+                        key={b.id}
+                        type="button"
+                        variant={bg === b.id ? 'default' : 'ghost'}
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => selectBg(b.id)}
+                        aria-label={b.label}
+                        aria-pressed={bg === b.id}
+                        title={b.label}
+                      >
+                        <Icon className="h-4 w-4" />
+                      </Button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* Lienzo */}
-          <div
-            className="relative min-h-0 flex-1 overflow-auto rounded-xl border border-border"
-            style={bgStyle(bg)}
-          >
-            <canvas
-              ref={canvasRef}
-              width={CANVAS_W}
-              height={CANVAS_H}
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
-              onPointerLeave={handlePointerUp}
-              className={cn('block h-auto w-full touch-none', tool === 'text' ? 'cursor-text' : 'cursor-crosshair')}
+            {/* Página / lienzo */}
+            <div className="flex min-h-0 flex-1 flex-col">
+              <div className="min-h-0 flex-1 overflow-auto bg-muted/40 p-3 sm:p-6">
+                <div
+                  className="relative mx-auto w-full max-w-[1000px] overflow-hidden rounded-lg border border-border shadow-sm"
+                  style={bgStyle(bg)}
+                >
+                  <canvas
+                    ref={canvasRef}
+                    width={CANVAS_W}
+                    height={CANVAS_H}
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onPointerLeave={handlePointerUp}
+                    className={cn('block h-auto w-full touch-none', tool === 'text' ? 'cursor-text' : 'cursor-crosshair')}
+                  />
+                  {textInput && (
+                    <input
+                      autoFocus
+                      value={textInput.value}
+                      onChange={(e) => setTextInput((t) => ({ ...t, value: e.target.value }))}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          commitText();
+                        } else if (e.key === 'Escape') {
+                          cancelTextRef.current = true;
+                          setTextInput(null);
+                        }
+                      }}
+                      onBlur={commitText}
+                      placeholder="Escribí…"
+                      style={{
+                        left: textInput.xCss,
+                        top: textInput.yCss,
+                        fontSize: `${textInput.fontCss}px`,
+                        color,
+                        lineHeight: 1,
+                      }}
+                      className="absolute z-10 min-w-[40px] rounded border border-primary/60 bg-white/95 px-1 py-0.5 font-sans outline-none"
+                    />
+                  )}
+                </div>
+              </div>
+              <p className="border-t border-border py-1.5 text-center text-[11px] text-muted-foreground">
+                Tu pizarra se guarda en este navegador automáticamente.
+              </p>
+            </div>
+          </TabsContent>
+
+          {/* --- Notas --- */}
+          <TabsContent value="notas" className="mt-0 flex min-h-0 flex-1 flex-col gap-2 p-4">
+            <textarea
+              value={notes}
+              onChange={handleNotesChange}
+              placeholder="Escribe acá tus apuntes rápidos: fórmulas, dudas, recordatorios…"
+              className="min-h-0 flex-1 resize-none rounded-xl border border-border bg-background p-3 text-sm leading-relaxed shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Notas"
             />
-            {textInput && (
-              <input
-                autoFocus
-                value={textInput.value}
-                onChange={(e) => setTextInput((t) => ({ ...t, value: e.target.value }))}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    commitText();
-                  } else if (e.key === 'Escape') {
-                    cancelTextRef.current = true;
-                    setTextInput(null);
-                  }
-                }}
-                onBlur={commitText}
-                placeholder="Escribí…"
-                style={{
-                  left: textInput.xCss,
-                  top: textInput.yCss,
-                  fontSize: `${textInput.fontCss}px`,
-                  color,
-                  lineHeight: 1,
-                }}
-                className="absolute z-10 min-w-[40px] rounded border border-primary/60 bg-white/95 px-1 py-0.5 font-sans outline-none"
-              />
-            )}
-          </div>
-          <p className="text-center text-[11px] text-muted-foreground">
-            Tu pizarra se guarda en este navegador automáticamente.
-          </p>
-        </TabsContent>
-
-        {/* --- Notas --- */}
-        <TabsContent value="notas" className="mt-0 flex min-h-0 flex-1 flex-col gap-2 p-4">
-          <textarea
-            value={notes}
-            onChange={handleNotesChange}
-            placeholder="Escribe acá tus apuntes rápidos: fórmulas, dudas, recordatorios…"
-            className="min-h-0 flex-1 resize-none rounded-xl border border-border bg-background p-3 text-sm leading-relaxed shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label="Notas"
-          />
-          <p className="text-center text-[11px] text-muted-foreground">
-            Tus notas se guardan en este navegador automáticamente.
-          </p>
-        </TabsContent>
-      </Tabs>
-    </aside>
+            <p className="text-center text-[11px] text-muted-foreground">
+              Tus notas se guardan en este navegador automáticamente.
+            </p>
+          </TabsContent>
+        </Tabs>
+      </aside>
+    </div>
   );
 };
 
